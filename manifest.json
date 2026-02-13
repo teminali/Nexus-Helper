@@ -1,15 +1,16 @@
 {
   "manifest_version": 3,
   "name": "Nexus Helper",
-  "version": "3.2.0",
-  "description": "AI-powered context capture for Cursor & Antigravity — routes, screenshots, debug info, smart prompts, and API docs.",
+  "version": "3.3.0",
+  "description": "AI-powered context capture for Cursor, VS Code, Windsurf & Zed — routes, screenshots, debug info, smart prompts, API docs integration, and rich contextual awareness.",
   "permissions": [
     "activeTab",
     "clipboardWrite",
     "storage",
     "tabs",
     "scripting",
-    "webNavigation"
+    "webNavigation",
+    "identity"
   ],
   "host_permissions": [
     "<all_urls>"

@@ -435,6 +435,68 @@ async function nexusAuthSignIn(email, password) {
   return { uid: data.localId, email: data.email, displayName: data.displayName || '' };
 }
 
+async function nexusAuthSignInWithGoogle() {
+  const clientId = typeof NEXUS_FIREBASE_CONFIG !== 'undefined' ? NEXUS_FIREBASE_CONFIG.googleClientId : '';
+  if (!clientId) throw new Error('Google Client ID not configured. Add googleClientId to firebase-config.js');
+
+  const redirectUrl = chrome.identity.getRedirectURL();
+  const scopes = encodeURIComponent('openid email profile');
+  const authUrl =
+    `https://accounts.google.com/o/oauth2/v2/auth` +
+    `?client_id=${encodeURIComponent(clientId)}` +
+    `&redirect_uri=${encodeURIComponent(redirectUrl)}` +
+    `&response_type=token id_token` +
+    `&scope=${scopes}` +
+    `&nonce=${Date.now()}`;
+
+  // Open Google sign-in popup
+  const responseUrl = await new Promise((resolve, reject) => {
+    chrome.identity.launchWebAuthFlow({ url: authUrl, interactive: true }, (callbackUrl) => {
+      if (chrome.runtime.lastError) {
+        reject(new Error(chrome.runtime.lastError.message));
+      } else {
+        resolve(callbackUrl);
+      }
+    });
+  });
+
+  // Extract id_token from the redirect URL fragment
+  const hashParams = new URLSearchParams(new URL(responseUrl).hash.substring(1));
+  const idToken = hashParams.get('id_token');
+  const accessToken = hashParams.get('access_token');
+
+  if (!idToken && !accessToken) throw new Error('Failed to get Google token');
+
+  // Exchange the Google token for a Firebase auth token
+  const postBody = idToken
+    ? `id_token=${idToken}&providerId=google.com`
+    : `access_token=${accessToken}&providerId=google.com`;
+
+  const res = await fetch(`${AUTH_BASE}/accounts:signInWithIdp?key=${fbApiKey()}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      postBody,
+      requestUri: redirectUrl,
+      returnSecureToken: true
+    })
+  });
+
+  const data = await res.json();
+  if (data.error) throw new Error(data.error.message || 'Google sign in failed');
+
+  await storeAuthTokens({
+    idToken: data.idToken,
+    refreshToken: data.refreshToken,
+    localId: data.localId,
+    email: data.email || '',
+    displayName: data.displayName || data.fullName || '',
+    expiresIn: data.expiresIn
+  });
+
+  return { uid: data.localId, email: data.email || '', displayName: data.displayName || '' };
+}
+
 async function nexusAuthSignOut() {
   await chrome.storage.local.remove(['nexusAuth']);
   return { ok: true };
@@ -641,15 +703,42 @@ async function nexusGetDoc(docId) {
 
   let collectionJson = doc.collectionJson || null;
 
-  // If chunked, read chunks
-  if (!collectionJson && (doc.chunkCount || 0) > 0) {
-    const chunksUrl = firestoreDocUrl(`${fbCollection()}/${docId}/${fbChunks()}`);
-    const chunksRes = await fetch(chunksUrl, {
-      headers: { 'Authorization': `Bearer ${idToken}` }
-    });
-    const chunksData = await chunksRes.json();
-    if (chunksData.documents && Array.isArray(chunksData.documents)) {
-      const sorted = chunksData.documents
+  // Validate if inline JSON is actually parseable — if not, it's truncated → use chunks
+  let needsChunks = !collectionJson && (doc.chunkCount || 0) > 0;
+  if (collectionJson && (doc.chunkCount || 0) > 0) {
+    try {
+      JSON.parse(collectionJson);
+    } catch {
+      // Inline JSON is truncated/corrupt — fall back to chunks
+      needsChunks = true;
+      collectionJson = null;
+    }
+  }
+
+  // Read chunks with pagination to handle large collections
+  if (needsChunks) {
+    const allChunkDocs = [];
+    let pageToken = null;
+    const basePath = `${fbCollection()}/${docId}/${fbChunks()}`;
+
+    do {
+      let chunksUrl = firestoreDocUrl(basePath) + '?pageSize=100';
+      if (pageToken) chunksUrl += `&pageToken=${encodeURIComponent(pageToken)}`;
+
+      const chunksRes = await fetch(chunksUrl, {
+        headers: { 'Authorization': `Bearer ${idToken}` }
+      });
+      const chunksData = await chunksRes.json();
+
+      if (chunksData.documents && Array.isArray(chunksData.documents)) {
+        allChunkDocs.push(...chunksData.documents);
+      }
+
+      pageToken = chunksData.nextPageToken || null;
+    } while (pageToken);
+
+    if (allChunkDocs.length > 0) {
+      const sorted = allChunkDocs
         .map(d => parseFirestoreDoc(d))
         .filter(Boolean)
         .sort((a, b) => (a.index || 0) - (b.index || 0));
@@ -672,6 +761,13 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
   if (message.action === 'nexus-auth-signin') {
     nexusAuthSignIn(message.email, message.password)
+      .then(user => sendResponse({ ok: true, user }))
+      .catch(err => sendResponse({ ok: false, error: String(err.message || err) }));
+    return true;
+  }
+
+  if (message.action === 'nexus-auth-google') {
+    nexusAuthSignInWithGoogle()
       .then(user => sendResponse({ ok: true, user }))
       .catch(err => sendResponse({ ok: false, error: String(err.message || err) }));
     return true;

@@ -1,8 +1,8 @@
 # Nexus Helper
 
-> AI-powered context capture for Cursor, Antigravity, VS Code, Windsurf & Zed. Routes, screenshots, debug info, smart prompts, and rich contextual awareness -- all from a floating widget in your browser.
+> AI-powered context capture for Cursor, Antigravity, VS Code, Windsurf & Zed. Routes, screenshots, debug info, smart prompts, API docs integration, and rich contextual awareness -- all from a floating widget in your browser.
 
-![Version](https://img.shields.io/badge/version-3.1.0-blueviolet)
+![Version](https://img.shields.io/badge/version-3.3.0-blueviolet)
 ![Chrome Extension](https://img.shields.io/badge/platform-Chrome%20Extension-green)
 ![Manifest](https://img.shields.io/badge/manifest-v3-blue)
 
@@ -20,10 +20,17 @@ Instead of manually describing what you see, what's broken, or what route you're
 
 ### Floating Widget
 - **Draggable & resizable** -- position it anywhere on the page
-- **3 states** -- collapsed (breathing dot), expanded, and maximized
+- **3 states** -- collapsed (logo capsule), expanded, and maximized
+- **Minimized capsule** -- Nexus logo + breathing health dot, expands to a sleek action bar on hover with screenshot, copy route, copy context, open editor, expand, and close buttons
 - **Peek mode** -- compact when idle, expands on hover/interaction
 - **Remembers position** -- restores exactly where you left it
 - **Keyboard toggle** -- `Alt+N` to show/hide
+
+### Header Bar
+- **User avatar** -- shows initials when signed in, click for dropdown menu
+- **User dropdown** -- My API Docs, Manage Docs (opens NexusDocer), Account Settings, Sign Out
+- **Info button** -- opens the Nexus Helper landing page (nexushelper.web.app)
+- **Settings, theme toggle, minimize, maximize, close** controls
 
 ### AI Context Engine
 The core feature. Nexus Helper generates structured, XML-tagged context optimized for AI consumption:
@@ -41,6 +48,7 @@ The core feature. Nexus Helper generates structured, XML-tagged context optimize
 | **Errors** | Structured console errors with stack traces and component boundaries |
 | **Data Fetching** | Pending, completed, and failed API requests with timing |
 | **API Response Shapes** | JSON structure descriptions of successful API responses |
+| **API Reference** | Attached API documentation (endpoints, folders, collections) with full request/response details |
 | **Accessibility Tree** | ARIA landmarks, semantic elements, interactive states, live regions |
 | **Viewport Info** | Device type, dimensions, orientation, dark mode, reduced motion |
 | **Performance Hints** | Core Web Vitals, slow requests, DOM complexity, memory usage |
@@ -61,7 +69,17 @@ As you type your prompt, Nexus Helper analyzes keywords and:
 2. Shows a floating **intent badge** inside the editor (color-coded)
 3. Pressing the **dismiss button** (X) reverts to Minimal; re-type and it re-detects
 
-Supported intents: Bug Fix, UI/Style, Performance, Data/API, Accessibility, Routing, Form/UI.
+Supported intents: Bug Fix, UI/Style, Performance, Data/API, Accessibility, Routing, Form/UI, Implement.
+
+### API Docs Integration
+Nexus Helper integrates with **NexusDocer** (Firebase-powered API documentation platform):
+
+- **Firebase Auth** -- sign in with email/password or Google
+- **API Docs browser** -- view your published API collections, folders, and endpoints
+- **Attach API docs to context** -- search and attach endpoints, folders, or whole collections from the editor toolbar
+- **Smart API auto-suggest** -- type "implement login" or "integrate payment" and matching API endpoints appear automatically as suggestions
+- **Full API content in context** -- attached docs include method, URL, headers, body schema, query params, path variables, auth type, and response examples with shape analysis
+- **Manage Docs** -- quick link to NexusDocer web app from the user dropdown
 
 ### Default Editor & Auto-Copy
 - **Settings panel** lets you choose your default editor: Cursor, Antigravity, VS Code, Windsurf, or Zed
@@ -78,6 +96,7 @@ Real-time estimated token count of the generated context, with visual warnings:
 - **Copy Screenshot** -- visible tab as PNG
 - **Copy Context** -- full AI-optimized context
 - **Open Editor** -- opens your configured editor with the project
+- **Clear button** -- clears prompt text, all attached API items, and resets everything
 
 ### Debug Panel
 - Real-time error and network monitoring
@@ -117,8 +136,8 @@ Real-time estimated token count of the generated context, with visual warnings:
 ## Quick Start
 
 1. Open any web page (localhost, staging, production)
-2. The floating widget appears as a small **breathing dot** (bottom-right)
-3. **Hover** to expand, or press `Alt+N` to toggle
+2. The floating widget appears as a **Nexus logo capsule** with a breathing health dot
+3. **Hover** to expand the quick-action bar, or press `Alt+N` to toggle the full widget
 4. Type your prompt in the editor
 5. Click **Copy Context** -- structured AI context is on your clipboard
 6. Paste into your AI editor (Cursor, Antigravity, etc.)
@@ -137,6 +156,15 @@ Real-time estimated token count of the generated context, with visual warnings:
 2. Click a preset: Auto, Bug Fix, UI, Full, or Minimal
 3. Or just type -- **Auto** mode detects your intent from keywords
 
+### Attaching API Docs
+
+1. **Sign in** via the user avatar in the header (or Settings > Account)
+2. Click the **book icon** in the editor toolbar to open the API docs panel
+3. **Search** for endpoints, folders, or collections
+4. **Click** to attach -- items appear as chips below the prompt
+5. Or just type "implement login" and matching endpoints auto-suggest
+6. Attached API docs are included as full documentation in the AI context
+
 ---
 
 ## Project Structure
@@ -150,13 +178,14 @@ Nexus-Helper/
 │   ├── icon48.svg
 │   └── icon128.svg
 ├── popup/                         # Extension popup UI
-│   ├── popup.html                 # Popup layout
-│   ├── popup.css                  # Popup styles
-│   └── popup.js                   # Popup logic
+│   ├── popup.html
+│   ├── popup.css
+│   └── popup.js
 ├── scripts/
-│   ├── background.js              # Service worker (screenshots, editor launch, routing)
+│   ├── background.js              # Service worker (screenshots, editor, Firebase auth & Firestore)
 │   ├── content.js                 # Page monitoring (errors, network, performance)
-│   ├── floating-widget.js         # Main widget (UI, context engine, all features)
+│   ├── floating-widget.js         # Main widget (UI, context engine, API docs, all features)
+│   ├── firebase-config.js         # Firebase project configuration
 │   ├── storage.js                 # Chrome storage utilities
 │   ├── detect-path.js             # React fiber project path detection
 │   ├── main-world-network.js      # Main-world fetch/XHR interceptor
@@ -177,6 +206,7 @@ Nexus-Helper/
 | `tabs` | Query tab information |
 | `scripting` | Inject content scripts |
 | `webNavigation` | Track SPA navigation for route history |
+| `identity` | Google Sign-in for Firebase authentication |
 | `<all_urls>` | Monitor pages for debugging on any URL |
 
 ---
@@ -210,8 +240,22 @@ Nexus-Helper/
 
 ## Changelog
 
+### v3.3.0 -- API Docs Integration & Minimized Redesign
+- Firebase Auth integration (email/password + Google Sign-in)
+- API Docs browser -- view published collections from NexusDocer
+- API Docs attach panel -- search and attach endpoints, folders, or whole collections to AI context
+- Smart API auto-suggest -- "implement login" auto-finds matching API endpoints
+- Full API documentation content in context (headers, body, params, response shapes)
+- Header user avatar with dropdown menu (API Docs, Manage Docs, Settings, Sign Out)
+- Info button linking to nexushelper.web.app
+- Manage Docs link to NexusDocer web app
+- Redesigned minimized state -- glassmorphic capsule with logo + health dot + action bar
+- Clear button to reset prompt, attachments, and intent state
+- Chunked Firestore document support with pagination
+- Bug fixes for dropdown z-index and transparency
+
 ### v3.1.0 -- AI Context Engine & Smart Editor
-- Rich 11-section AI context with XML-tagged structure
+- Rich 15-section AI context with XML-tagged structure
 - Context presets (Auto, Bug Fix, UI, Full, Minimal)
 - Intent auto-detection from prompt keywords with floating badge
 - Default editor setting (Cursor, Antigravity, VS Code, Windsurf, Zed)

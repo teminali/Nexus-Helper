@@ -540,7 +540,16 @@
         /* Dimensions — used only as initial defaults; custom sizes override via inline style */
         .nx-widget[data-state="expanded"] { width: 380px; height: 480px; }
         .nx-widget[data-state="bigger"] { width: 720px; height: 480px; }
-        .nx-widget[data-state="collapsed"] { width: auto !important; height: auto !important; border-radius: 50px; min-width: unset; overflow: visible; box-shadow: 0 2px 8px rgba(0,0,0,0.15); }
+        .nx-widget[data-state="collapsed"] {
+          width: auto !important;
+          height: auto !important;
+          border-radius: 50px;
+          min-width: unset;
+          overflow: visible;
+          box-shadow: 0 4px 20px rgba(0,0,0,0.25), 0 0 0 1px hsl(var(--nx-border) / 0.3);
+          backdrop-filter: blur(16px);
+          -webkit-backdrop-filter: blur(16px);
+        }
 
         /* ── Peek mode: expanded/bigger start compact, reveal on hover ── */
         .nx-peek-trigger {
@@ -595,6 +604,8 @@
           background-color: hsl(var(--nx-bg) / 0.85);
           backdrop-filter: blur(12px);
           -webkit-backdrop-filter: blur(12px);
+          position: relative;
+          z-index: 10;
           cursor: grab;
           user-select: none;
         }
@@ -613,7 +624,98 @@
         }
         .nx-title { font-weight: 600; font-size: 13px; letter-spacing: -0.025em; }
         
-        .nx-controls { display: flex; gap: 2px; }
+        .nx-controls { display: flex; gap: 2px; align-items: center; }
+
+        /* ── Header user menu ─────────────────────────── */
+        .nx-user-menu-wrap {
+          position: relative;
+          margin-right: 2px;
+        }
+        .nx-user-btn {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          width: 24px;
+          height: 24px;
+          border-radius: 50%;
+          border: none;
+          cursor: pointer;
+          font-size: 10px;
+          font-weight: 600;
+          transition: box-shadow 0.15s, opacity 0.15s;
+          padding: 0;
+        }
+        .nx-user-btn.signed-out {
+          background: hsl(var(--nx-secondary));
+          color: hsl(var(--nx-muted-fg));
+          border: 1px dashed hsl(var(--nx-border));
+        }
+        .nx-user-btn.signed-out:hover { border-color: hsl(var(--nx-primary)); color: hsl(var(--nx-primary)); }
+        .nx-user-btn.signed-in {
+          background: hsl(var(--nx-primary));
+          color: hsl(var(--nx-primary-fg));
+          border: 2px solid hsl(var(--nx-primary));
+        }
+        .nx-user-btn.signed-in:hover { box-shadow: 0 0 0 2px hsl(var(--nx-primary) / 0.3); }
+
+        .nx-user-dropdown {
+          display: none;
+          position: absolute;
+          top: calc(100% + 6px);
+          right: 0;
+          min-width: 190px;
+          background-color: hsl(var(--nx-bg));
+          border: 1px solid hsl(var(--nx-border));
+          border-radius: 8px;
+          box-shadow: 0 8px 24px rgba(0,0,0,0.25), 0 2px 8px rgba(0,0,0,0.12);
+          z-index: 9999;
+          padding: 4px 0;
+          animation: fade-in 0.12s ease;
+          backdrop-filter: none;
+          -webkit-backdrop-filter: none;
+          opacity: 1;
+        }
+        .nx-user-dropdown.open { display: block; }
+
+        .nx-user-dropdown-header {
+          padding: 10px 12px;
+          border-bottom: 1px solid hsl(var(--nx-border));
+        }
+        .nx-user-dropdown-email {
+          font-size: 11px;
+          font-weight: 500;
+          color: hsl(var(--nx-fg));
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
+        .nx-user-dropdown-uid {
+          font-size: 9px;
+          color: hsl(var(--nx-muted-fg));
+          margin-top: 1px;
+        }
+        .nx-user-dropdown-item {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          width: 100%;
+          padding: 7px 12px;
+          border: none;
+          background: transparent;
+          color: hsl(var(--nx-fg));
+          font-size: 11px;
+          cursor: pointer;
+          text-align: left;
+          transition: background 0.1s;
+        }
+        .nx-user-dropdown-item:hover { background: hsl(var(--nx-secondary)); }
+        .nx-user-dropdown-item.danger { color: hsl(0 84% 60%); }
+        .nx-user-dropdown-item.danger:hover { background: hsl(0 84% 60% / 0.08); }
+        .nx-user-dropdown-sep {
+          height: 1px;
+          background: hsl(var(--nx-border));
+          margin: 4px 0;
+        }
         .nx-btn-icon {
           display: flex;
           align-items: center;
@@ -659,6 +761,7 @@
         .nx-panel { display: none; flex: 1; overflow-y: auto; padding: 12px; }
         .nx-panel[data-active="true"] { display: flex; flex-direction: column; animation: fade-in 0.15s ease; }
         @keyframes fade-in { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 
         /* Scrollbar */
         .nx-panel::-webkit-scrollbar,
@@ -813,6 +916,26 @@
       min-height: 0;
       z-index: 1;
     }
+    .nx-prompt-clear {
+      position: absolute;
+      bottom: 6px;
+      right: 6px;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      border: none;
+      background: hsl(var(--nx-muted-fg) / 0.15);
+      color: hsl(var(--nx-muted-fg));
+      display: none;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      padding: 0;
+      z-index: 3;
+      transition: background 0.12s, color 0.12s;
+    }
+    .nx-prompt-clear:hover { background: hsl(0 84% 60% / 0.15); color: hsl(0 84% 60%); }
+    .nx-prompt-clear.visible { display: flex; }
     .nx-editor-textarea {
       flex: 1;
       border: none !important;
@@ -947,6 +1070,38 @@
       background: hsl(var(--nx-primary));
       color: hsl(var(--nx-primary-fg));
     }
+    .nx-auth-divider {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin: 8px 0;
+    }
+    .nx-auth-divider::before, .nx-auth-divider::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: hsl(var(--nx-border));
+    }
+    .nx-auth-divider span {
+      font-size: 9px;
+      color: hsl(var(--nx-muted-fg));
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .nx-google-btn {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: hsl(var(--nx-bg)) !important;
+      color: hsl(var(--nx-fg)) !important;
+      border: 1px solid hsl(var(--nx-border)) !important;
+      transition: background 0.15s, border-color 0.15s;
+    }
+    .nx-google-btn:hover {
+      background: hsl(var(--nx-secondary)) !important;
+      border-color: hsl(var(--nx-muted-fg) / 0.3) !important;
+    }
+    .nx-google-btn svg { flex-shrink: 0; }
     .nx-avatar {
       width: 32px;
       height: 32px;
@@ -1118,6 +1273,288 @@
       background: hsl(var(--nx-border));
       margin: 0 4px;
       flex-shrink: 0;
+    }
+
+    /* ── API Docs Attach Panel ─────────────────────── */
+    .nx-api-attach-wrap {
+      position: relative;
+    }
+    .nx-api-attach-panel {
+      display: none;
+      position: absolute;
+      bottom: calc(100% + 8px);
+      left: 0;
+      width: 300px;
+      max-height: 340px;
+      background-color: hsl(var(--nx-bg));
+      border: 1px solid hsl(var(--nx-border));
+      border-radius: 10px;
+      box-shadow: 0 8px 28px rgba(0,0,0,0.22), 0 2px 8px rgba(0,0,0,0.1);
+      z-index: 9999;
+      overflow: hidden;
+      animation: fade-in 0.12s ease;
+      backdrop-filter: none;
+    }
+    .nx-api-attach-panel.open { display: flex; flex-direction: column; }
+    .nx-api-attach-search {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 10px;
+      border-bottom: 1px solid hsl(var(--nx-border));
+    }
+    .nx-api-attach-search input {
+      flex: 1;
+      border: none;
+      background: transparent;
+      color: hsl(var(--nx-fg));
+      font-size: 11px;
+      outline: none;
+      font-family: var(--font-sans);
+    }
+    .nx-api-attach-search input::placeholder { color: hsl(var(--nx-muted-fg)); }
+    .nx-api-attach-search svg { flex-shrink: 0; color: hsl(var(--nx-muted-fg)); }
+    .nx-api-attach-body {
+      flex: 1;
+      overflow-y: auto;
+      padding: 4px 0;
+      max-height: 240px;
+    }
+    .nx-api-attach-empty {
+      padding: 20px 12px;
+      text-align: center;
+      font-size: 11px;
+      color: hsl(var(--nx-muted-fg));
+    }
+    .nx-api-attach-loading {
+      padding: 16px 12px;
+      text-align: center;
+      font-size: 11px;
+      color: hsl(var(--nx-muted-fg));
+    }
+    .nx-api-attach-doc {
+      padding: 5px 10px 5px 8px;
+    }
+    .nx-api-attach-doc-header {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 3px 0;
+      cursor: pointer;
+      font-size: 11px;
+      font-weight: 600;
+      color: hsl(var(--nx-fg));
+      user-select: none;
+    }
+    .nx-api-attach-doc-header:hover { color: hsl(var(--nx-primary)); }
+    .nx-api-attach-doc-header .chevron {
+      transition: transform 0.15s;
+      flex-shrink: 0;
+      color: hsl(var(--nx-muted-fg));
+    }
+    .nx-api-attach-doc-header.expanded .chevron { transform: rotate(90deg); }
+    .nx-api-attach-doc-actions {
+      display: flex;
+      gap: 4px;
+      margin-left: auto;
+      flex-shrink: 0;
+    }
+    .nx-api-attach-link-btn {
+      display: flex;
+      align-items: center;
+      gap: 3px;
+      padding: 2px 6px;
+      border-radius: 4px;
+      border: 1px solid hsl(var(--nx-border));
+      background: transparent;
+      color: hsl(var(--nx-muted-fg));
+      font-size: 9px;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.12s;
+    }
+    .nx-api-attach-link-btn:hover {
+      border-color: hsl(var(--nx-primary));
+      color: hsl(var(--nx-primary));
+      background: hsl(var(--nx-primary) / 0.06);
+    }
+    .nx-api-attach-link-btn.attached {
+      border-color: hsl(var(--nx-primary));
+      background: hsl(var(--nx-primary) / 0.12);
+      color: hsl(var(--nx-primary));
+    }
+    .nx-api-attach-children {
+      display: none;
+      padding-left: 8px;
+    }
+    .nx-api-attach-children.open { display: block; }
+    .nx-api-attach-folder {
+      padding: 2px 0;
+    }
+    .nx-api-attach-folder-header {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      padding: 2px 4px;
+      cursor: pointer;
+      font-size: 10px;
+      color: hsl(var(--nx-fg));
+      user-select: none;
+      border-radius: 4px;
+    }
+    .nx-api-attach-folder-header:hover { background: hsl(var(--nx-secondary)); }
+    .nx-api-attach-folder-header .chevron { transition: transform 0.15s; color: hsl(var(--nx-muted-fg)); }
+    .nx-api-attach-folder-header.expanded .chevron { transform: rotate(90deg); }
+    .nx-api-attach-endpoint {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      padding: 3px 4px 3px 12px;
+      font-size: 10px;
+      cursor: pointer;
+      border-radius: 4px;
+      transition: background 0.1s;
+    }
+    .nx-api-attach-endpoint:hover { background: hsl(var(--nx-secondary)); }
+    .nx-api-attach-endpoint .nx-attach-method {
+      font-size: 8px;
+      font-weight: 700;
+      padding: 1px 4px;
+      border-radius: 3px;
+      text-transform: uppercase;
+      flex-shrink: 0;
+      font-family: var(--font-mono);
+    }
+    .nx-attach-method.get { background: hsl(142 71% 45% / 0.15); color: hsl(142 71% 35%); }
+    .nx-attach-method.post { background: hsl(38 92% 50% / 0.15); color: hsl(38 92% 40%); }
+    .nx-attach-method.put { background: hsl(221 83% 53% / 0.15); color: hsl(221 83% 45%); }
+    .nx-attach-method.patch { background: hsl(262 83% 58% / 0.15); color: hsl(262 83% 48%); }
+    .nx-attach-method.delete { background: hsl(0 84% 60% / 0.15); color: hsl(0 84% 50%); }
+    .nx-api-attach-endpoint .nx-attach-name {
+      flex: 1;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      color: hsl(var(--nx-fg));
+    }
+    .nx-api-attach-endpoint.attached {
+      background: hsl(var(--nx-primary) / 0.08);
+    }
+    .nx-api-attach-endpoint.attached .nx-attach-name { color: hsl(var(--nx-primary)); }
+
+    /* Attached items chips bar */
+    .nx-attached-chips {
+      display: none;
+      flex-wrap: wrap;
+      gap: 4px;
+      padding: 4px 8px 2px 8px;
+    }
+    .nx-attached-chips.has-items { display: flex; }
+    .nx-attached-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      padding: 2px 6px;
+      border-radius: 4px;
+      background: hsl(var(--nx-primary) / 0.1);
+      color: hsl(var(--nx-primary));
+      font-size: 9px;
+      font-family: var(--font-sans);
+      max-width: 160px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .nx-attached-chip .remove {
+      cursor: pointer;
+      font-size: 10px;
+      opacity: 0.6;
+      transition: opacity 0.1s;
+    }
+    .nx-attached-chip .remove:hover { opacity: 1; }
+
+    /* API auto-suggest bar (appears when "implement/integrate" intent detected) */
+    .nx-api-suggest-bar {
+      display: none;
+      padding: 4px 8px;
+      border-top: 1px solid hsl(var(--nx-border) / 0.5);
+    }
+    .nx-api-suggest-bar.visible { display: block; }
+    .nx-api-suggest-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 4px;
+      margin-bottom: 3px;
+    }
+    .nx-api-suggest-title {
+      font-size: 9px;
+      font-weight: 600;
+      color: hsl(var(--nx-muted-fg));
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .nx-api-suggest-dismiss {
+      font-size: 9px;
+      color: hsl(var(--nx-muted-fg));
+      cursor: pointer;
+      background: none;
+      border: none;
+      padding: 0 2px;
+    }
+    .nx-api-suggest-dismiss:hover { color: hsl(var(--nx-fg)); }
+    .nx-api-suggest-items {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+      max-height: 60px;
+      overflow-y: auto;
+    }
+    .nx-api-suggest-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 3px 8px;
+      border-radius: 5px;
+      border: 1px solid hsl(var(--nx-border));
+      background: hsl(var(--nx-secondary) / 0.5);
+      font-size: 10px;
+      cursor: pointer;
+      transition: all 0.12s;
+      max-width: 220px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      color: hsl(var(--nx-fg));
+    }
+    .nx-api-suggest-item:hover {
+      border-color: hsl(var(--nx-primary));
+      background: hsl(var(--nx-primary) / 0.08);
+      color: hsl(var(--nx-primary));
+    }
+    .nx-api-suggest-item.attached {
+      border-color: hsl(var(--nx-primary));
+      background: hsl(var(--nx-primary) / 0.12);
+      color: hsl(var(--nx-primary));
+    }
+    .nx-api-suggest-item .nx-suggest-method {
+      font-size: 7px;
+      font-weight: 700;
+      padding: 1px 3px;
+      border-radius: 2px;
+      text-transform: uppercase;
+      font-family: var(--font-mono);
+      flex-shrink: 0;
+    }
+    .nx-suggest-method.get { background: hsl(142 71% 45% / 0.15); color: hsl(142 71% 35%); }
+    .nx-suggest-method.post { background: hsl(38 92% 50% / 0.15); color: hsl(38 92% 40%); }
+    .nx-suggest-method.put { background: hsl(221 83% 53% / 0.15); color: hsl(221 83% 45%); }
+    .nx-suggest-method.patch { background: hsl(262 83% 58% / 0.15); color: hsl(262 83% 48%); }
+    .nx-suggest-method.delete { background: hsl(0 84% 60% / 0.15); color: hsl(0 84% 50%); }
+    .nx-suggest-no-match {
+      font-size: 10px;
+      color: hsl(var(--nx-muted-fg));
+      padding: 2px 0;
     }
 
     /* Prompt suggestions */
@@ -1368,12 +1805,12 @@
         .nx-net-empty-icon { font-size: 24px; margin-bottom: 8px; opacity: 0.4; }
         .nx-net-empty-text { font-size: 12px; }
 
-        /* Minimized State */
+        /* ═══ Minimized State ═══ */
         .nx-minimized {
           display: none;
           align-items: center;
           gap: 0px;
-          padding: 4px;
+          padding: 0;
           overflow: hidden;
           white-space: nowrap;
         }
@@ -1382,52 +1819,131 @@
         .nx-widget[data-state="collapsed"] .nx-header,
         .nx-widget[data-state="collapsed"] .nx-health-bar { display: none; }
 
-        /* The breathing health dot — sole visible element when not hovered */
-        .nx-mini-dot {
-          width: 12px;
-          height: 12px;
-          border-radius: 50%;
-          background: hsl(142 76% 36%);
-          transition: background 0.3s;
-          animation: nx-breathe 2.5s ease-in-out infinite;
-          flex-shrink: 0;
-        }
-        @keyframes nx-breathe {
-          0%, 100% { box-shadow: 0 0 4px 1px hsl(142 76% 36% / 0.4); transform: scale(1); }
-          50%      { box-shadow: 0 0 10px 3px hsl(142 76% 36% / 0.25); transform: scale(1.15); }
-        }
-
-        /* Collapsed circle → expanded pill on hover */
-        .nx-minimized .nx-mini-expand {
-          display: flex;
-          align-items: center;
-          gap: 8px;
-          max-width: 0;
-          opacity: 0;
-          overflow: hidden;
-          padding-left: 0;
-          transition: max-width 0.35s cubic-bezier(0.4, 0, 0.2, 1),
-                      opacity 0.25s ease 0.05s,
-                      padding-left 0.3s ease;
-        }
-        .nx-widget[data-state="collapsed"]:hover .nx-mini-expand,
-        .nx-widget[data-state="collapsed"].is-dragging .nx-mini-expand {
-          max-width: 320px;
-          opacity: 1;
-          padding-left: 8px;
-        }
-
-        /* Keep the trigger (dot only) compact */
+        /* ── Trigger capsule: logo + health dot ── */
         .nx-mini-trigger {
           display: flex;
           align-items: center;
           justify-content: center;
+          gap: 6px;
+          padding: 7px 10px;
           flex-shrink: 0;
           cursor: grab;
+          transition: gap 0.3s ease;
+        }
+        .nx-mini-logo {
+          width: 18px;
+          height: 18px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          color: hsl(var(--nx-primary));
+          flex-shrink: 0;
+          filter: drop-shadow(0 0 4px hsl(var(--nx-primary) / 0.3));
+        }
+        .nx-mini-logo svg { width: 18px; height: 18px; }
+
+        /* Health dot */
+        .nx-mini-dot {
+          width: 8px;
+          height: 8px;
+          border-radius: 50%;
+          background: hsl(142 76% 36%);
+          transition: background 0.3s;
+          animation: nx-breathe 3s ease-in-out infinite;
+          flex-shrink: 0;
+        }
+        @keyframes nx-breathe {
+          0%, 100% { box-shadow: 0 0 3px 1px hsl(142 76% 36% / 0.4); transform: scale(1); }
+          50%      { box-shadow: 0 0 8px 3px hsl(142 76% 36% / 0.2); transform: scale(1.2); }
         }
 
-        .nx-mini-sep { width: 1px; height: 16px; background-color: hsl(var(--nx-border)); margin: 0 4px; flex-shrink: 0; }
+        /* ── Expanded pill area (slides out on hover) ── */
+        .nx-minimized .nx-mini-expand {
+          display: flex;
+          align-items: center;
+          gap: 4px;
+          max-width: 0;
+          opacity: 0;
+          overflow: hidden;
+          padding: 0;
+          transition: max-width 0.35s cubic-bezier(0.4, 0, 0.2, 1),
+                      opacity 0.25s ease 0.08s,
+                      padding 0.3s ease;
+        }
+        .nx-widget[data-state="collapsed"]:hover .nx-mini-expand,
+        .nx-widget[data-state="collapsed"].is-dragging .nx-mini-expand {
+          max-width: 340px;
+          opacity: 1;
+          padding: 0 8px 0 2px;
+        }
 
+        /* Action buttons in the expanded pill */
+        .nx-mini-action {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          width: 30px;
+          height: 30px;
+          border-radius: 8px;
+          border: none;
+          background: transparent;
+          color: hsl(var(--nx-muted-fg));
+          cursor: pointer;
+          flex-shrink: 0;
+          transition: background 0.12s, color 0.12s, transform 0.12s;
+          position: relative;
+        }
+        .nx-mini-action:hover {
+          background: hsl(var(--nx-secondary));
+          color: hsl(var(--nx-fg));
+          transform: scale(1.08);
+        }
+        .nx-mini-action.primary {
+          background: hsl(var(--nx-primary) / 0.1);
+          color: hsl(var(--nx-primary));
+        }
+        .nx-mini-action.primary:hover {
+          background: hsl(var(--nx-primary) / 0.2);
+        }
+        .nx-mini-action.danger:hover {
+          background: hsl(0 84% 60% / 0.1);
+          color: hsl(0 84% 60%);
+        }
+
+        .nx-mini-sep {
+          width: 1px;
+          height: 18px;
+          background-color: hsl(var(--nx-border) / 0.5);
+          margin: 0 2px;
+          flex-shrink: 0;
+        }
+
+        /* Tooltips on mini actions */
+        .nx-mini-action[data-tooltip]::after {
+          content: attr(data-tooltip);
+          position: absolute;
+          bottom: calc(100% + 6px);
+          left: 50%;
+          transform: translateX(-50%) translateY(4px);
+          background: hsl(var(--nx-popover));
+          color: hsl(var(--nx-popover-fg));
+          border: 1px solid hsl(var(--nx-border));
+          border-radius: 6px;
+          padding: 4px 8px;
+          font-size: 10px;
+          white-space: nowrap;
+          opacity: 0;
+          pointer-events: none;
+          box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+          transition: opacity 0.12s ease, transform 0.12s ease;
+          z-index: 1;
+        }
+        .nx-mini-action[data-tooltip]:hover::after {
+          opacity: 1;
+          transform: translateX(-50%) translateY(0);
+        }
+
+        /* Legacy compat: keep .nx-btn-icon tooltips in minimized too */
         .nx-minimized .nx-btn-icon { position: relative; flex-shrink: 0; }
         .nx-minimized .nx-btn-icon[data-tooltip]::after {
           content: attr(data-tooltip);
@@ -1571,6 +2087,15 @@
               </div>
            </div>
            <div class="nx-controls">
+              <div class="nx-user-menu-wrap">
+                 <button class="nx-user-btn signed-out" id="header-user-btn" title="Sign in">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                 </button>
+                 <div class="nx-user-dropdown" id="header-user-dropdown">
+                    <!-- Filled dynamically -->
+                 </div>
+              </div>
+              <button class="nx-btn-icon" id="info-btn" title="About Nexus Helper"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg></button>
               <button class="nx-btn-icon" id="settings-btn" title="Settings">${this.icons.settings}</button>
               <button class="nx-btn-icon" id="theme-btn" title="Toggle Theme">${this.icons.moon}</button>
               <button class="nx-btn-icon" id="min-btn" title="Minimize">${this.icons.minimize}</button>
@@ -1620,6 +2145,17 @@
                        <span class="nx-intent-label" id="intent-label"></span>
                        <button class="nx-intent-dismiss" id="intent-dismiss" title="Cancel — use minimal context">✕</button>
                     </div>
+                    <button class="nx-prompt-clear" id="prompt-clear-btn" title="Clear prompt and attachments">
+                       <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                    </button>
+                 </div>
+                 <div class="nx-attached-chips" id="api-attached-chips"></div>
+                 <div class="nx-api-suggest-bar" id="api-suggest-bar">
+                    <div class="nx-api-suggest-header">
+                       <span class="nx-api-suggest-title">API matches</span>
+                       <button class="nx-api-suggest-dismiss" id="api-suggest-dismiss" title="Dismiss">✕</button>
+                    </div>
+                    <div class="nx-api-suggest-items" id="api-suggest-items"></div>
                  </div>
                  <!-- Toolbar inside editor — like chat attach/emoji bar -->
                  <div class="nx-editor-toolbar">
@@ -1633,6 +2169,20 @@
                        <button class="nx-toolbar-btn" id="copy-bug-report-btn" title="Copy bug report">
                           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 2l1.88 1.88"/><path d="M14.12 3.88 16 2"/><path d="M9 7.13v-1a3.003 3.003 0 1 1 6 0v1"/><path d="M12 20c-3.3 0-6-2.7-6-6v-3a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v3c0 3.3-2.7 6-6 6"/><path d="M12 20v-9"/><path d="M6.53 9C4.6 8.8 3 7.1 3 5"/><path d="M6 13H2"/><path d="M3 21c0-2.1 1.7-3.9 3.8-4"/><path d="M20.97 5c0 2.1-1.6 3.8-3.5 4"/><path d="M22 13h-4"/><path d="M17.2 17c2.1.1 3.8 1.9 3.8 4"/></svg>
                        </button>
+                       <div class="nx-api-attach-wrap">
+                          <button class="nx-toolbar-btn" id="api-attach-btn" title="Attach API docs to context">
+                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/><path d="M8 7h6"/><path d="M8 11h8"/></svg>
+                          </button>
+                          <div class="nx-api-attach-panel" id="api-attach-panel">
+                             <div class="nx-api-attach-search">
+                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                                <input type="text" id="api-attach-search" placeholder="Search endpoints, folders..." autocomplete="off" />
+                             </div>
+                             <div class="nx-api-attach-body" id="api-attach-body">
+                                <div class="nx-api-attach-empty">Sign in to attach API docs</div>
+                             </div>
+                          </div>
+                       </div>
                        <button class="nx-toolbar-btn" id="mic-btn" title="Voice input (speech-to-text)">
                           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" x2="12" y1="19" y2="22"/></svg>
                        </button>
@@ -1778,6 +2328,11 @@
                        <input class="nx-input" id="auth-password" type="password" placeholder="Password" style="font-size:11px; margin-bottom:6px;" />
                        <div id="auth-error" style="display:none; font-size:10px; color:hsl(0 84% 60%); margin-bottom:6px; line-height:1.3;"></div>
                        <button class="nx-action-btn" id="auth-signin-btn" style="width:100%; justify-content:center; font-size:11px; background:hsl(var(--nx-primary)); color:hsl(var(--nx-primary-fg));">Sign In</button>
+                       <div class="nx-auth-divider"><span>or</span></div>
+                       <button class="nx-action-btn nx-google-btn" id="auth-google-btn" style="width:100%; justify-content:center; font-size:11px;">
+                          <svg width="14" height="14" viewBox="0 0 48 48"><path fill="#4285F4" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#34A853" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59A14.5 14.5 0 0 1 9.5 24c0-1.59.28-3.14.76-4.59l-7.98-6.19A23.998 23.998 0 0 0 0 24c0 3.77.9 7.35 2.56 10.52l7.97-5.93z"/><path fill="#EA4335" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 5.93C6.51 42.62 14.62 48 24 48z"/></svg>
+                          Sign in with Google
+                       </button>
                     </div>
                     <div class="nx-auth-form" id="auth-register-form" style="display:none;">
                        <input class="nx-input" id="auth-reg-email" type="email" placeholder="Email" style="font-size:11px; margin-bottom:6px;" />
@@ -1785,6 +2340,11 @@
                        <input class="nx-input" id="auth-reg-confirm" type="password" placeholder="Confirm password" style="font-size:11px; margin-bottom:6px;" />
                        <div id="auth-reg-error" style="display:none; font-size:10px; color:hsl(0 84% 60%); margin-bottom:6px; line-height:1.3;"></div>
                        <button class="nx-action-btn" id="auth-register-btn" style="width:100%; justify-content:center; font-size:11px; background:hsl(var(--nx-primary)); color:hsl(var(--nx-primary-fg));">Create Account</button>
+                       <div class="nx-auth-divider"><span>or</span></div>
+                       <button class="nx-action-btn nx-google-btn" id="auth-google-btn-reg" style="width:100%; justify-content:center; font-size:11px;">
+                          <svg width="14" height="14" viewBox="0 0 48 48"><path fill="#4285F4" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#34A853" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59A14.5 14.5 0 0 1 9.5 24c0-1.59.28-3.14.76-4.59l-7.98-6.19A23.998 23.998 0 0 0 0 24c0 3.77.9 7.35 2.56 10.52l7.97-5.93z"/><path fill="#EA4335" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 5.93C6.51 42.62 14.62 48 24 48z"/></svg>
+                          Sign up with Google
+                       </button>
                     </div>
                  </div>
                  <!-- Logged in state -->
@@ -1870,16 +2430,29 @@
         <!-- Minimized Bar -->
         <div class="nx-minimized">
            <div class="nx-mini-trigger">
+              <div class="nx-mini-logo">${this.icons.logo}</div>
               <span class="nx-health-dot nx-mini-dot" id="mini-health-dot"></span>
            </div>
            <div class="nx-mini-expand">
-              <button class="nx-btn-icon" data-action="copy-screenshot" title="Copy screenshot" data-tooltip="Copy screenshot">${this.icons.camera}</button>
-              <button class="nx-btn-icon" data-action="copy-route" title="Copy route" data-tooltip="Copy route">${this.icons.copy}</button>
-              <button class="nx-btn-icon" data-action="copy-cursor-context" title="Copy context" data-tooltip="Copy context">${this.icons.brain}</button>
-              <button class="nx-btn-icon nx-editor-btn" data-action="open-cursor" title="Open Cursor" data-tooltip="Open Cursor">${this.icons.cursor || this.icons.logo}</button>
+              <button class="nx-mini-action" data-action="copy-screenshot" data-tooltip="Screenshot">
+                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="18" height="18" x="3" y="3" rx="2"/><circle cx="12" cy="12" r="3"/></svg>
+              </button>
+              <button class="nx-mini-action" data-action="copy-route" data-tooltip="Copy Route">
+                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+              </button>
+              <button class="nx-mini-action primary" data-action="copy-cursor-context" data-tooltip="Copy Context">
+                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="14" height="14" x="8" y="8" rx="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
+              </button>
+              <button class="nx-mini-action primary nx-editor-btn" data-action="open-cursor" data-tooltip="Open Editor">
+                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+              </button>
               <div class="nx-mini-sep"></div>
-              <button class="nx-btn-icon" id="restore-btn" title="Restore" data-tooltip="Restore">${this.icons.maximize}</button>
-              <button class="nx-btn-icon close" id="close-mini-btn" title="Close" data-tooltip="Close">${this.icons.close}</button>
+              <button class="nx-mini-action" id="restore-btn" data-tooltip="Expand">
+                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>
+              </button>
+              <button class="nx-mini-action danger" id="close-mini-btn" data-tooltip="Close">
+                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              </button>
            </div>
         </div>
 
@@ -1919,6 +2492,7 @@
       });
 
       // Logic for window controls
+      this.root.querySelector('#info-btn')?.addEventListener('click', () => window.open('https://nexushelper.web.app', '_blank'));
       this.root.querySelector('#settings-btn').addEventListener('click', () => this.openSettings());
       this.root.querySelector('#min-btn').addEventListener('click', () => this.setState('collapsed'));
       this.root.querySelector('#max-btn').addEventListener('click', () => this.setState(this.state === 'expanded' ? 'bigger' : 'expanded'));
@@ -1948,6 +2522,33 @@
       this.root.querySelector('#copy-bug-report-btn')?.addEventListener('click', () => this.copyBugReport());
       this.root.querySelector('#attach-text-btn').addEventListener('click', () => this.attachSelection());
       this.root.querySelector('#pick-text-btn').addEventListener('click', () => this.togglePicker());
+
+      // API docs attach panel
+      this.root.querySelector('#api-attach-btn')?.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.toggleApiAttachPanel();
+      });
+      const apiAttachSearch = this.root.querySelector('#api-attach-search');
+      if (apiAttachSearch) {
+        apiAttachSearch.addEventListener('input', () => {
+          const query = apiAttachSearch.value;
+          this.filterApiAttachPanel(query);
+        });
+        apiAttachSearch.addEventListener('click', (e) => e.stopPropagation());
+      }
+      // Close panel on outside click
+      this.root.addEventListener('click', () => {
+        this.root.querySelector('#api-attach-panel')?.classList.remove('open');
+      });
+      this.root.querySelector('#api-attach-panel')?.addEventListener('click', (e) => e.stopPropagation());
+
+      // API suggest bar dismiss
+      this.root.querySelector('#api-suggest-dismiss')?.addEventListener('click', () => {
+        this._apiSuggestDismissed = true;
+        this._apiSuggestDismissedText = this.root.querySelector('#ai-prompt')?.value || '';
+        this.root.querySelector('#api-suggest-bar')?.classList.remove('visible');
+      });
+
       this.root.querySelector('#save-settings-btn').addEventListener('click', () => this.saveSettings());
       this.root.querySelector('#reindex-btn')?.addEventListener('click', () => this.reindexProject(fileInput));
       this.root.querySelector('#clear-index-filter-btn')?.addEventListener('click', async () => {
@@ -1982,6 +2583,10 @@
         if (e.key === 'Enter') this.handleSignIn();
       });
 
+      // Google sign in (both buttons trigger the same flow)
+      this.root.querySelector('#auth-google-btn')?.addEventListener('click', () => this.handleGoogleSignIn());
+      this.root.querySelector('#auth-google-btn-reg')?.addEventListener('click', () => this.handleGoogleSignIn());
+
       // Register
       this.root.querySelector('#auth-register-btn')?.addEventListener('click', () => this.handleRegister());
       this.root.querySelector('#auth-reg-confirm')?.addEventListener('keydown', (e) => {
@@ -1990,6 +2595,28 @@
 
       // Sign out
       this.root.querySelector('#auth-signout-btn')?.addEventListener('click', () => this.handleSignOut());
+
+      // ── Header user menu ─────────────────────────────────────────────
+      const userBtn = this.root.querySelector('#header-user-btn');
+      const userDropdown = this.root.querySelector('#header-user-dropdown');
+      if (userBtn && userDropdown) {
+        userBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          if (!this._currentUser) {
+            // Not logged in → open settings to the auth section
+            this.openSettings();
+            setTimeout(() => {
+              const authSection = this.root.querySelector('#auth-email');
+              if (authSection) authSection.focus();
+            }, 250);
+            return;
+          }
+          userDropdown.classList.toggle('open');
+        });
+        // Close dropdown when clicking outside
+        this.root.addEventListener('click', () => userDropdown.classList.remove('open'));
+        userDropdown.addEventListener('click', (e) => e.stopPropagation());
+      }
 
       // API Docs: go to login
       this.root.querySelector('#api-docs-goto-login')?.addEventListener('click', () => {
@@ -2019,10 +2646,18 @@
       // Prompt UX
       const promptInput = this.root.querySelector('#ai-prompt');
       const suggestMenu = this.root.querySelector('#prompt-suggest-menu');
+      // Clear prompt button
+      const clearBtn = this.root.querySelector('#prompt-clear-btn');
+      if (clearBtn) {
+        clearBtn.addEventListener('click', () => this.clearPromptAndAttachments());
+      }
+
       if (promptInput) {
         promptInput.addEventListener('input', () => {
           this.handlePromptInput();
           this.updateLivePreset();
+          this.checkApiSuggest();
+          this.updateClearBtnVisibility();
         });
         promptInput.addEventListener('click', () => this.handlePromptInput());
         promptInput.addEventListener('focus', () => this.handlePromptInput());
@@ -2925,6 +3560,12 @@
         if (perf) sections.push(`<performance>\n${perf}\n</performance>`);
       }
 
+      // ── Attached API reference docs
+      const apiRef = this.buildApiReferenceContext();
+      if (apiRef) {
+        sections.push(`<api_reference>\n${apiRef}\n</api_reference>`);
+      }
+
       // ── DOM snapshot (only if enabled and has content)
       if (toggles.dom) {
         const domSnapshot = this.buildCompactDomSnapshot();
@@ -3127,8 +3768,20 @@
       data: 'Data / API',
       a11y: 'Accessibility',
       routing: 'Routing',
-      form: 'Form / UI'
+      form: 'Form / UI',
+      implement: 'Implement'
     };
+
+    // Patterns that trigger API doc auto-search
+    _implementPatterns = [
+      /\bimplement/i, /\bintegrat/i, /\bbuild\b/i, /\bcreate\b/i,
+      /\badd\b/i, /\bconnect\b/i, /\bconsume\b/i, /\bcall\b/i,
+      /\buse\b.*\bapi\b/i, /\bhook\s*up\b/i, /\bwire\s*up\b/i,
+      /\bset\s*up\b/i, /\bfetch\b/i
+    ];
+
+    _apiSuggestDismissed = false;
+    _apiSuggestDebounce = null;
 
     /**
      * Detect the dominant intent from prompt text.
@@ -3221,6 +3874,57 @@
         badge.classList.remove('visible');
         badge.removeAttribute('data-intent');
       }
+    }
+
+    clearPromptAndAttachments() {
+      // Clear prompt text
+      const textarea = this.root.querySelector('#ai-prompt');
+      if (textarea) {
+        textarea.value = '';
+        textarea.dispatchEvent(new Event('input', { bubbles: true }));
+      }
+
+      // Clear ghost overlay
+      const ghost = this.root.querySelector('#ghost-overlay');
+      if (ghost) ghost.textContent = '';
+
+      // Clear all attached API items
+      this._attachedApiItems = [];
+      this.renderAttachedChips();
+
+      // Hide API suggest bar
+      this.root.querySelector('#api-suggest-bar')?.classList.remove('visible');
+      this._apiSuggestDismissed = false;
+
+      // Reset intent badge
+      const badge = this.root.querySelector('#intent-badge');
+      if (badge) {
+        badge.classList.remove('visible');
+        badge.removeAttribute('data-intent');
+      }
+      this._intentDismissed = false;
+      this._dismissedText = '';
+
+      // Reset preset to auto
+      this._activePreset = 'auto';
+      this._detectedPreset = 'auto';
+      this.root.querySelectorAll('.nx-preset-btn').forEach(btn => {
+        btn.setAttribute('data-active', btn.dataset.preset === 'auto' ? 'true' : 'false');
+      });
+
+      // Reset token counter
+      this.updateTokenCounter(0);
+
+      // Hide clear button
+      this.root.querySelector('#prompt-clear-btn')?.classList.remove('visible');
+    }
+
+    updateClearBtnVisibility() {
+      const btn = this.root.querySelector('#prompt-clear-btn');
+      if (!btn) return;
+      const hasText = (this.root.querySelector('#ai-prompt')?.value || '').trim().length > 0;
+      const hasAttachments = this._attachedApiItems.length > 0;
+      btn.classList.toggle('visible', hasText || hasAttachments);
     }
 
     applyAutoDetect(promptText) {
@@ -4536,6 +5240,42 @@
       }
     }
 
+    async handleGoogleSignIn() {
+      const loginBtn = this.root.querySelector('#auth-google-btn');
+      const regBtn = this.root.querySelector('#auth-google-btn-reg');
+      const origLogin = loginBtn?.innerHTML;
+      const origReg = regBtn?.innerHTML;
+      if (loginBtn) loginBtn.textContent = 'Opening Google...';
+      if (regBtn) regBtn.textContent = 'Opening Google...';
+
+      try {
+        const response = await new Promise(resolve => {
+          chrome.runtime.sendMessage({ action: 'nexus-auth-google' }, resolve);
+        });
+
+        if (response?.ok) {
+          this._currentUser = response.user;
+          this.updateAuthUI(true);
+          this.updateApiDocsAuthUI(true);
+          this.showToast(`Signed in as ${response.user.email}`);
+        } else {
+          const msg = this.formatAuthError(response?.error || 'Google sign in failed');
+          const errorEl = this.root.querySelector('#auth-error');
+          const regErrorEl = this.root.querySelector('#auth-reg-error');
+          if (errorEl && this.root.querySelector('#auth-login-form')?.style.display !== 'none') {
+            errorEl.textContent = msg; errorEl.style.display = 'block';
+          } else if (regErrorEl) {
+            regErrorEl.textContent = msg; regErrorEl.style.display = 'block';
+          }
+        }
+      } catch (e) {
+        this.showToast('Google sign in failed');
+      }
+
+      if (loginBtn && origLogin) loginBtn.innerHTML = origLogin;
+      if (regBtn && origReg) regBtn.innerHTML = origReg;
+    }
+
     async handleSignIn() {
       const email = this.root.querySelector('#auth-email')?.value?.trim();
       const password = this.root.querySelector('#auth-password')?.value;
@@ -4673,6 +5413,75 @@
         loggedOut.style.display = 'block';
         loggedIn.style.display = 'none';
       }
+
+      // ── Header user button & dropdown ──────────────────────────────
+      this.updateHeaderUserMenu(isLoggedIn);
+    }
+
+    updateHeaderUserMenu(isLoggedIn) {
+      const btn = this.root.querySelector('#header-user-btn');
+      const dropdown = this.root.querySelector('#header-user-dropdown');
+      if (!btn || !dropdown) return;
+
+      dropdown.classList.remove('open');
+
+      if (isLoggedIn && this._currentUser) {
+        const initial = (this._currentUser.email || 'U')[0].toUpperCase();
+        btn.className = 'nx-user-btn signed-in';
+        btn.innerHTML = initial;
+        btn.title = this._currentUser.email || 'Account';
+
+        dropdown.innerHTML = `
+          <div class="nx-user-dropdown-header">
+            <div class="nx-user-dropdown-email">${this.escHtml(this._currentUser.email || 'Unknown')}</div>
+            <div class="nx-user-dropdown-uid">UID: ${this.escHtml(this._currentUser.uid || '')}</div>
+          </div>
+          <button class="nx-user-dropdown-item" data-action="api-docs">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+            My API Docs
+          </button>
+          <button class="nx-user-dropdown-item" data-action="manage-docs">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+            Manage Docs
+          </button>
+          <button class="nx-user-dropdown-item" data-action="settings">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+            Account Settings
+          </button>
+          <div class="nx-user-dropdown-sep"></div>
+          <button class="nx-user-dropdown-item danger" data-action="signout">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+            Sign Out
+          </button>
+        `;
+
+        // Wire dropdown item clicks
+        dropdown.querySelectorAll('.nx-user-dropdown-item').forEach(item => {
+          item.addEventListener('click', () => {
+            dropdown.classList.remove('open');
+            const action = item.dataset.action;
+            if (action === 'api-docs') {
+              // Switch to API Docs tab
+              this.root.querySelectorAll('.nx-tab').forEach(t => t.setAttribute('data-active', 'false'));
+              this.root.querySelectorAll('.nx-panel').forEach(p => p.setAttribute('data-active', 'false'));
+              this.root.querySelector('[data-tab="api-docs"]')?.setAttribute('data-active', 'true');
+              this.root.querySelector('#panel-api-docs')?.setAttribute('data-active', 'true');
+              this.loadApiDocs();
+            } else if (action === 'manage-docs') {
+              window.open('https://nexusdocer.web.app/', '_blank');
+            } else if (action === 'settings') {
+              this.openSettings();
+            } else if (action === 'signout') {
+              this.handleSignOut();
+            }
+          });
+        });
+      } else {
+        btn.className = 'nx-user-btn signed-out';
+        btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>';
+        btn.title = 'Sign in';
+        dropdown.innerHTML = '';
+      }
     }
 
     updateApiDocsAuthUI(isLoggedIn) {
@@ -4774,13 +5583,14 @@
         });
 
         if (response?.ok && response.doc?.collectionJson) {
-          const collection = JSON.parse(response.doc.collectionJson);
+          const json = response.doc.collectionJson;
+          const collection = typeof json === 'object' ? json : JSON.parse(json);
           this.renderApiEndpoints(collection);
         } else {
           if (endpointsEl) endpointsEl.innerHTML = `<div class="nx-api-empty">Failed to load.<br><span style="font-size:9px; opacity:0.7;">${response?.error || 'No data'}</span></div>`;
         }
       } catch (e) {
-        if (endpointsEl) endpointsEl.innerHTML = '<div class="nx-api-empty">Failed to parse collection.</div>';
+        if (endpointsEl) endpointsEl.innerHTML = `<div class="nx-api-empty">Failed to parse collection.<br><span style="font-size:9px; opacity:0.7;">${this.escHtml(String(e.message || e).slice(0, 120))}</span></div>`;
       }
     }
 
@@ -4843,6 +5653,868 @@
       const detail = this.root.querySelector('#api-docs-detail');
       if (content) content.style.display = 'block';
       if (detail) detail.style.display = 'none';
+    }
+
+    // ═══════════════════════════════════════════════════════════════════
+    //  API Docs Attach — search & include doc links in AI context
+    // ═══════════════════════════════════════════════════════════════════
+
+    _attachedApiItems = [];      // { type: 'doc'|'folder'|'endpoint', docId, docName, label, path, method?, url? }
+    _apiAttachCache = {};        // docId → parsed collection JSON
+
+    toggleApiAttachPanel() {
+      const panel = this.root.querySelector('#api-attach-panel');
+      if (!panel) return;
+      const isOpen = panel.classList.contains('open');
+      if (isOpen) {
+        panel.classList.remove('open');
+      } else {
+        panel.classList.add('open');
+        this.loadApiAttachPanel();
+        setTimeout(() => this.root.querySelector('#api-attach-search')?.focus(), 80);
+      }
+    }
+
+    async loadApiAttachPanel() {
+      const body = this.root.querySelector('#api-attach-body');
+      if (!body) return;
+
+      if (!this._currentUser) {
+        body.innerHTML = '<div class="nx-api-attach-empty">Sign in to attach API docs</div>';
+        return;
+      }
+
+      // If we already have cached docs list, render immediately
+      if (this._apiDocs && this._apiDocs.length) {
+        this.renderApiAttachDocs(this._apiDocs);
+        return;
+      }
+
+      body.innerHTML = '<div class="nx-api-attach-loading">Loading collections...</div>';
+
+      try {
+        const response = await new Promise(resolve => {
+          chrome.runtime.sendMessage({ action: 'nexus-docs-list', userId: this._currentUser.uid }, resolve);
+        });
+        if (response?.ok && response.docs) {
+          this._apiDocs = response.docs;
+          this.renderApiAttachDocs(response.docs);
+        } else {
+          body.innerHTML = '<div class="nx-api-attach-empty">Failed to load docs</div>';
+        }
+      } catch {
+        body.innerHTML = '<div class="nx-api-attach-empty">Error loading docs</div>';
+      }
+    }
+
+    renderApiAttachDocs(docs, filter = '') {
+      const body = this.root.querySelector('#api-attach-body');
+      if (!body) return;
+
+      if (!docs.length) {
+        body.innerHTML = '<div class="nx-api-attach-empty">No API collections yet</div>';
+        return;
+      }
+
+      const lowerFilter = filter.toLowerCase().trim();
+
+      const html = docs.map(doc => {
+        const docLabel = doc.name || 'Untitled';
+        const isDocAttached = this._attachedApiItems.some(a => a.type === 'doc' && a.docId === doc.id);
+        return `
+          <div class="nx-api-attach-doc" data-doc-id="${doc.id}">
+            <div class="nx-api-attach-doc-header" data-doc-id="${doc.id}">
+              <svg class="chevron" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+              <span style="flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${this.escHtml(docLabel)}</span>
+              <div class="nx-api-attach-doc-actions">
+                <button class="nx-api-attach-link-btn ${isDocAttached ? 'attached' : ''}" data-attach-type="doc" data-doc-id="${doc.id}" data-doc-name="${this.escHtml(docLabel)}" title="Attach entire collection">
+                  ${isDocAttached ? '✓' : '+'} Doc
+                </button>
+              </div>
+            </div>
+            <div class="nx-api-attach-children" data-children-for="${doc.id}">
+              <div class="nx-api-attach-loading" style="font-size:10px; padding:8px;">Loading...</div>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      body.innerHTML = html;
+
+      // Wire doc header toggle (expand/collapse)
+      body.querySelectorAll('.nx-api-attach-doc-header').forEach(header => {
+        header.addEventListener('click', async (e) => {
+          // Don't toggle if clicking the attach button
+          if (e.target.closest('.nx-api-attach-link-btn')) return;
+          const docId = header.dataset.docId;
+          const children = body.querySelector(`[data-children-for="${docId}"]`);
+          const isExpanded = header.classList.contains('expanded');
+          if (isExpanded) {
+            header.classList.remove('expanded');
+            children?.classList.remove('open');
+          } else {
+            header.classList.add('expanded');
+            children?.classList.add('open');
+            await this.loadApiAttachDocChildren(docId, children, lowerFilter);
+          }
+        });
+      });
+
+      // Wire "Attach Doc" buttons
+      body.querySelectorAll('.nx-api-attach-link-btn[data-attach-type="doc"]').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const docId = btn.dataset.docId;
+          const docName = btn.dataset.docName;
+          this.toggleApiAttach({ type: 'doc', docId, docName, label: docName });
+          // Refresh UI
+          const isNow = this._attachedApiItems.some(a => a.type === 'doc' && a.docId === docId);
+          btn.classList.toggle('attached', isNow);
+          btn.innerHTML = isNow ? '✓ Doc' : '+ Doc';
+        });
+      });
+    }
+
+    async loadApiAttachDocChildren(docId, container, filter = '') {
+      if (!container) return;
+
+      // Check cache
+      if (this._apiAttachCache[docId]) {
+        this.renderApiAttachItems(docId, this._apiAttachCache[docId], container, filter);
+        return;
+      }
+
+      // Check extension context
+      if (!this.isExtensionContextValid()) {
+        container.innerHTML = '<div class="nx-api-attach-empty" style="padding:6px; font-size:10px;">Extension reloaded — please refresh page</div>';
+        return;
+      }
+
+      try {
+        const response = await new Promise((resolve, reject) => {
+          try {
+            chrome.runtime.sendMessage({ action: 'nexus-docs-get', docId }, (resp) => {
+              if (chrome.runtime.lastError) {
+                reject(new Error(chrome.runtime.lastError.message));
+              } else {
+                resolve(resp);
+              }
+            });
+          } catch (err) {
+            reject(err);
+          }
+        });
+
+        if (response?.ok && response.doc) {
+          let collection;
+          const json = response.doc.collectionJson;
+          if (typeof json === 'string') {
+            collection = JSON.parse(json);
+          } else if (typeof json === 'object' && json !== null) {
+            collection = json;
+          }
+
+          if (collection?.item) {
+            this._apiAttachCache[docId] = collection;
+            this.renderApiAttachItems(docId, collection, container, filter);
+          } else {
+            container.innerHTML = '<div class="nx-api-attach-empty" style="padding:6px; font-size:10px;">No endpoints in this collection</div>';
+          }
+        } else {
+          const errMsg = response?.error || 'Unknown error';
+          container.innerHTML = `<div class="nx-api-attach-empty" style="padding:6px; font-size:10px;">Failed: ${this.escHtml(errMsg)}</div>`;
+        }
+      } catch (err) {
+        console.error('[Nexus] loadApiAttachDocChildren error:', err);
+        container.innerHTML = `<div class="nx-api-attach-empty" style="padding:6px; font-size:10px;">Error: ${this.escHtml(String(err.message || err))}</div>`;
+      }
+    }
+
+    renderApiAttachItems(docId, collection, container, filter = '') {
+      const docMeta = this._apiDocs.find(d => d.id === docId);
+      const docName = docMeta?.name || 'Untitled';
+      const html = [];
+
+      const processItems = (items, parentPath = '', depth = 0) => {
+        if (!Array.isArray(items)) return;
+        for (const item of items) {
+          if (item.item && Array.isArray(item.item)) {
+            // Folder
+            const folderPath = parentPath ? `${parentPath} / ${item.name}` : item.name;
+            const isFolderAttached = this._attachedApiItems.some(a => a.type === 'folder' && a.docId === docId && a.path === folderPath);
+
+            // Check if folder or any child matches filter
+            const folderMatch = !filter || (item.name || '').toLowerCase().includes(filter);
+            const childrenMatch = !filter || this.apiAttachHasMatch(item.item, filter);
+            if (!folderMatch && !childrenMatch) continue;
+
+            html.push(`
+              <div class="nx-api-attach-folder" style="padding-left:${depth * 10}px;">
+                <div class="nx-api-attach-folder-header" data-folder-path="${this.escHtml(folderPath)}" data-doc-id="${docId}">
+                  <svg class="chevron" width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+                  <span style="flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">📁 ${this.escHtml(item.name || 'Folder')}</span>
+                  <button class="nx-api-attach-link-btn ${isFolderAttached ? 'attached' : ''}" data-attach-type="folder" data-doc-id="${docId}" data-doc-name="${this.escHtml(docName)}" data-folder-path="${this.escHtml(folderPath)}" data-label="${this.escHtml(item.name || 'Folder')}" style="font-size:8px;" title="Attach folder">
+                    ${isFolderAttached ? '✓' : '+'}
+                  </button>
+                </div>
+                <div class="nx-api-attach-children" data-folder-children="${this.escHtml(folderPath)}">
+            `);
+            processItems(item.item, folderPath, depth + 1);
+            html.push('</div></div>');
+          } else if (item.request) {
+            // Endpoint
+            const method = (item.request.method || 'GET').toUpperCase();
+            const url = typeof item.request.url === 'string'
+              ? item.request.url
+              : (item.request.url?.raw || item.request.url?.path?.join('/') || '');
+            const name = item.name || url;
+            const endpointPath = parentPath ? `${parentPath} / ${name}` : name;
+            const isEndpointAttached = this._attachedApiItems.some(a => a.type === 'endpoint' && a.docId === docId && a.path === endpointPath);
+
+            // Filter
+            if (filter && !(name.toLowerCase().includes(filter) || url.toLowerCase().includes(filter) || method.toLowerCase().includes(filter))) continue;
+
+            html.push(`
+              <div class="nx-api-attach-endpoint ${isEndpointAttached ? 'attached' : ''}" style="padding-left:${depth * 10 + 12}px;" data-attach-type="endpoint" data-doc-id="${docId}" data-doc-name="${this.escHtml(docName)}" data-method="${method}" data-url="${this.escHtml(url)}" data-label="${this.escHtml(name)}" data-path="${this.escHtml(endpointPath)}">
+                <span class="nx-attach-method ${method.toLowerCase()}">${method}</span>
+                <span class="nx-attach-name" title="${this.escHtml(url)}">${this.escHtml(name)}</span>
+              </div>
+            `);
+          }
+        }
+      };
+
+      processItems(collection.item);
+
+      if (html.length === 0) {
+        container.innerHTML = '<div class="nx-api-attach-empty" style="padding:6px; font-size:10px;">No matches found</div>';
+        return;
+      }
+
+      container.innerHTML = html.join('');
+
+      // Wire folder toggles
+      container.querySelectorAll('.nx-api-attach-folder-header').forEach(fh => {
+        fh.addEventListener('click', (e) => {
+          if (e.target.closest('.nx-api-attach-link-btn')) return;
+          const folderPath = fh.dataset.folderPath;
+          const children = container.querySelector(`[data-folder-children="${CSS.escape(folderPath)}"]`);
+          if (!children) return;
+          const isExpanded = fh.classList.contains('expanded');
+          fh.classList.toggle('expanded', !isExpanded);
+          children.classList.toggle('open', !isExpanded);
+        });
+
+        // If filter is active, auto-expand
+        if (filter) {
+          fh.classList.add('expanded');
+          const folderPath = fh.dataset.folderPath;
+          const children = container.querySelector(`[data-folder-children="${CSS.escape(folderPath)}"]`);
+          children?.classList.add('open');
+        }
+      });
+
+      // Wire folder attach buttons
+      container.querySelectorAll('.nx-api-attach-link-btn[data-attach-type="folder"]').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const docId = btn.dataset.docId;
+          const docName = btn.dataset.docName;
+          const folderPath = btn.dataset.folderPath;
+          const label = btn.dataset.label;
+          this.toggleApiAttach({ type: 'folder', docId, docName, path: folderPath, label });
+          const isNow = this._attachedApiItems.some(a => a.type === 'folder' && a.docId === docId && a.path === folderPath);
+          btn.classList.toggle('attached', isNow);
+          btn.innerHTML = isNow ? '✓' : '+';
+        });
+      });
+
+      // Wire endpoint clicks
+      container.querySelectorAll('.nx-api-attach-endpoint').forEach(ep => {
+        ep.addEventListener('click', () => {
+          const docId = ep.dataset.docId;
+          const docName = ep.dataset.docName;
+          const method = ep.dataset.method;
+          const url = ep.dataset.url;
+          const label = ep.dataset.label;
+          const path = ep.dataset.path;
+          this.toggleApiAttach({ type: 'endpoint', docId, docName, method, url, label, path });
+          const isNow = this._attachedApiItems.some(a => a.type === 'endpoint' && a.docId === docId && a.path === path);
+          ep.classList.toggle('attached', isNow);
+        });
+      });
+    }
+
+    apiAttachHasMatch(items, filter) {
+      if (!Array.isArray(items)) return false;
+      for (const item of items) {
+        if (item.item && Array.isArray(item.item)) {
+          if ((item.name || '').toLowerCase().includes(filter)) return true;
+          if (this.apiAttachHasMatch(item.item, filter)) return true;
+        } else if (item.request) {
+          const method = (item.request.method || 'GET').toLowerCase();
+          const url = typeof item.request.url === 'string'
+            ? item.request.url
+            : (item.request.url?.raw || item.request.url?.path?.join('/') || '');
+          const name = (item.name || '').toLowerCase();
+          if (name.includes(filter) || url.toLowerCase().includes(filter) || method.includes(filter)) return true;
+        }
+      }
+      return false;
+    }
+
+    toggleApiAttach(item) {
+      const idx = this._attachedApiItems.findIndex(a =>
+        a.type === item.type && a.docId === item.docId && a.path === item.path
+      );
+      if (idx >= 0) {
+        this._attachedApiItems.splice(idx, 1);
+      } else {
+        this._attachedApiItems.push(item);
+      }
+      this.renderAttachedChips();
+    }
+
+    removeApiAttach(index) {
+      this._attachedApiItems.splice(index, 1);
+      this.renderAttachedChips();
+      // If panel is open, refresh it
+      const panel = this.root.querySelector('#api-attach-panel');
+      if (panel?.classList.contains('open')) {
+        this.renderApiAttachDocs(this._apiDocs || [], this.root.querySelector('#api-attach-search')?.value || '');
+      }
+    }
+
+    renderAttachedChips() {
+      const chipsEl = this.root.querySelector('#api-attached-chips');
+      if (!chipsEl) return;
+
+      if (!this._attachedApiItems.length) {
+        chipsEl.classList.remove('has-items');
+        chipsEl.innerHTML = '';
+        this.updateClearBtnVisibility();
+        return;
+      }
+
+      chipsEl.classList.add('has-items');
+      chipsEl.innerHTML = this._attachedApiItems.map((item, i) => {
+        let icon = '';
+        if (item.type === 'doc') icon = '📄';
+        else if (item.type === 'folder') icon = '📁';
+        else if (item.type === 'endpoint') icon = `<span class="nx-attach-method ${(item.method || 'get').toLowerCase()}" style="font-size:7px; padding:0 3px; border-radius:2px;">${item.method || 'GET'}</span>`;
+        return `<span class="nx-attached-chip" title="${this.escHtml(item.path || item.label)}">${icon} ${this.escHtml(item.label || item.path || 'Item')}<span class="remove" data-idx="${i}">✕</span></span>`;
+      }).join('');
+
+      chipsEl.querySelectorAll('.remove').forEach(rm => {
+        rm.addEventListener('click', (e) => {
+          e.stopPropagation();
+          this.removeApiAttach(parseInt(rm.dataset.idx, 10));
+        });
+      });
+
+      this.updateClearBtnVisibility();
+    }
+
+    filterApiAttachPanel(query) {
+      if (!this._apiDocs?.length) return;
+      const lowerFilter = query.toLowerCase().trim();
+
+      // Re-render docs list with filter
+      this.renderApiAttachDocs(this._apiDocs, lowerFilter);
+
+      // Auto-expand docs whose children are already cached and match filter
+      if (lowerFilter) {
+        const body = this.root.querySelector('#api-attach-body');
+        if (!body) return;
+        body.querySelectorAll('.nx-api-attach-doc-header').forEach(async (header) => {
+          const docId = header.dataset.docId;
+          if (this._apiAttachCache[docId]) {
+            const children = body.querySelector(`[data-children-for="${docId}"]`);
+            if (children) {
+              header.classList.add('expanded');
+              children.classList.add('open');
+              this.renderApiAttachItems(docId, this._apiAttachCache[docId], children, lowerFilter);
+            }
+          }
+        });
+      }
+    }
+
+    buildApiReferenceContext() {
+      if (!this._attachedApiItems.length) return '';
+      const sections = [];
+
+      for (const item of this._attachedApiItems) {
+        const collection = this._apiAttachCache[item.docId];
+        if (!collection) {
+          // Fallback: no cached data — include basic info
+          if (item.type === 'endpoint') {
+            sections.push(`## ${item.method || 'GET'} ${item.url || item.label}\nCollection: ${item.docName}`);
+          } else {
+            sections.push(`## ${item.type === 'doc' ? 'Collection' : 'Folder'}: ${item.label}\nFrom: ${item.docName}`);
+          }
+          continue;
+        }
+
+        if (item.type === 'doc') {
+          // Whole collection — extract all endpoints
+          sections.push(`## Collection: ${item.docName}`);
+          if (collection.info?.description) sections.push(String(collection.info.description).slice(0, 300));
+          const endpoints = this._extractEndpointsFlat(collection.item);
+          sections.push(this._formatEndpointsDocs(endpoints));
+        } else if (item.type === 'folder') {
+          // Find folder by path and extract its endpoints
+          const folder = this._findFolderByPath(collection.item, item.path);
+          if (folder) {
+            sections.push(`## Folder: ${item.path}\nCollection: ${item.docName}`);
+            if (folder.description) sections.push(String(folder.description).slice(0, 200));
+            const endpoints = this._extractEndpointsFlat(folder.item);
+            sections.push(this._formatEndpointsDocs(endpoints));
+          }
+        } else if (item.type === 'endpoint') {
+          // Find the specific endpoint
+          const ep = this._findEndpointByPath(collection.item, item.path);
+          if (ep) {
+            sections.push(this._formatSingleEndpoint(ep, item.docName));
+          } else {
+            sections.push(`## ${item.method || 'GET'} ${item.url || item.label}\nCollection: ${item.docName}`);
+          }
+        }
+      }
+
+      return sections.filter(Boolean).join('\n\n---\n\n');
+    }
+
+    /** Recursively collect all request items from a Postman item tree */
+    _extractEndpointsFlat(items, parentPath = '') {
+      const endpoints = [];
+      if (!Array.isArray(items)) return endpoints;
+      for (const item of items) {
+        const itemPath = parentPath ? `${parentPath} / ${item.name}` : item.name;
+        if (item.item && Array.isArray(item.item)) {
+          endpoints.push(...this._extractEndpointsFlat(item.item, itemPath));
+        } else if (item.request) {
+          endpoints.push({ ...item, _path: itemPath });
+        }
+      }
+      return endpoints;
+    }
+
+    /** Find a folder node by its display path (e.g. "Auth / Login") */
+    _findFolderByPath(items, targetPath, parentPath = '') {
+      if (!Array.isArray(items)) return null;
+      for (const item of items) {
+        if (item.item && Array.isArray(item.item)) {
+          const folderPath = parentPath ? `${parentPath} / ${item.name}` : item.name;
+          if (folderPath === targetPath) return item;
+          const found = this._findFolderByPath(item.item, targetPath, folderPath);
+          if (found) return found;
+        }
+      }
+      return null;
+    }
+
+    /** Find an endpoint item by its display path */
+    _findEndpointByPath(items, targetPath, parentPath = '') {
+      if (!Array.isArray(items)) return null;
+      for (const item of items) {
+        const itemPath = parentPath ? `${parentPath} / ${item.name}` : item.name;
+        if (item.item && Array.isArray(item.item)) {
+          const found = this._findEndpointByPath(item.item, targetPath, itemPath);
+          if (found) return found;
+        } else if (item.request && itemPath === targetPath) {
+          return item;
+        }
+      }
+      return null;
+    }
+
+    /** Format a list of endpoints into concise doc text */
+    _formatEndpointsDocs(endpoints) {
+      if (!endpoints.length) return 'No endpoints.';
+      return endpoints.map(ep => {
+        const req = ep.request;
+        const method = (req.method || 'GET').toUpperCase();
+        const url = this._extractPostmanUrl(req.url);
+        let line = `### ${method} ${url}`;
+        if (ep.name && ep.name !== url) line += `\nName: ${ep.name}`;
+        if (req.description) line += `\n${String(req.description).trim().slice(0, 200)}`;
+        line += this._formatRequestDetails(req);
+        line += this._formatResponseExamples(ep.response);
+        return line;
+      }).join('\n\n');
+    }
+
+    /** Format a single endpoint with full detail */
+    _formatSingleEndpoint(item, docName) {
+      const req = item.request;
+      const method = (req.method || 'GET').toUpperCase();
+      const url = this._extractPostmanUrl(req.url);
+      let out = `## ${method} ${url}`;
+      if (item.name && item.name !== url) out += `\nName: ${item.name}`;
+      out += `\nCollection: ${docName}`;
+      if (req.description) out += `\n\n${String(req.description).trim().slice(0, 400)}`;
+      out += this._formatRequestDetails(req);
+      out += this._formatResponseExamples(item.response);
+      return out;
+    }
+
+    /** Extract URL string from Postman's url object or string */
+    _extractPostmanUrl(url) {
+      if (typeof url === 'string') return url;
+      if (url?.raw) return url.raw;
+      if (url?.path) return '/' + (Array.isArray(url.path) ? url.path.join('/') : url.path);
+      return 'unknown';
+    }
+
+    /** Format headers, query params, and body from a Postman request */
+    _formatRequestDetails(req) {
+      let out = '';
+
+      // Headers (skip common ones)
+      const skipHeaders = new Set(['content-type', 'accept', 'user-agent', 'cache-control', 'connection', 'host']);
+      const headers = (req.header || []).filter(h => !h.disabled && !skipHeaders.has((h.key || '').toLowerCase()));
+      if (headers.length) {
+        out += '\nHeaders:';
+        for (const h of headers.slice(0, 8)) {
+          out += `\n  ${h.key}: ${h.value || ''}`;
+        }
+      }
+
+      // Query params
+      const query = req.url?.query || [];
+      const activeQuery = query.filter(q => !q.disabled);
+      if (activeQuery.length) {
+        out += '\nQuery params:';
+        for (const q of activeQuery.slice(0, 10)) {
+          out += `\n  ${q.key}${q.description ? ` — ${String(q.description).slice(0, 60)}` : ''}${q.value ? ` (example: ${q.value})` : ''}`;
+        }
+      }
+
+      // Path variables
+      const pathVars = req.url?.variable || [];
+      if (pathVars.length) {
+        out += '\nPath variables:';
+        for (const v of pathVars) {
+          out += `\n  :${v.key}${v.description ? ` — ${String(v.description).slice(0, 60)}` : ''}${v.value ? ` (example: ${v.value})` : ''}`;
+        }
+      }
+
+      // Body
+      if (req.body) {
+        const mode = req.body.mode;
+        if (mode === 'raw' && req.body.raw) {
+          const raw = String(req.body.raw).trim();
+          if (raw.length > 0) {
+            out += `\nBody (${req.body.options?.raw?.language || 'raw'}):`;
+            out += `\n${raw.slice(0, 500)}`;
+          }
+        } else if (mode === 'urlencoded' && req.body.urlencoded?.length) {
+          out += '\nBody (form-urlencoded):';
+          for (const f of req.body.urlencoded.filter(f => !f.disabled).slice(0, 10)) {
+            out += `\n  ${f.key}${f.description ? ` — ${String(f.description).slice(0, 60)}` : ''}`;
+          }
+        } else if (mode === 'formdata' && req.body.formdata?.length) {
+          out += '\nBody (form-data):';
+          for (const f of req.body.formdata.filter(f => !f.disabled).slice(0, 10)) {
+            out += `\n  ${f.key} (${f.type || 'text'})${f.description ? ` — ${String(f.description).slice(0, 60)}` : ''}`;
+          }
+        }
+      }
+
+      // Auth
+      if (req.auth) {
+        const authType = req.auth.type || 'unknown';
+        out += `\nAuth: ${authType}`;
+      }
+
+      return out;
+    }
+
+    /** Format response examples from Postman's response array */
+    _formatResponseExamples(responses) {
+      if (!Array.isArray(responses) || !responses.length) return '';
+      let out = '\nResponse examples:';
+      for (const resp of responses.slice(0, 3)) {
+        const status = resp.code || resp.status || '?';
+        const name = resp.name || '';
+        out += `\n  [${status}]${name ? ' ' + name : ''}`;
+        if (resp.body) {
+          const body = String(resp.body).trim();
+          if (body.length > 0) {
+            // Try to show shape rather than full body
+            try {
+              const parsed = JSON.parse(body);
+              out += `\n  ${this._describeResponseShape(parsed)}`;
+            } catch {
+              out += `\n  ${body.slice(0, 300)}`;
+            }
+          }
+        }
+      }
+      return out;
+    }
+
+    /** Describe JSON response shape for AI readability */
+    _describeResponseShape(obj, depth = 0, maxDepth = 2) {
+      if (depth > maxDepth) return '...';
+      if (obj === null) return 'null';
+      if (Array.isArray(obj)) {
+        if (obj.length === 0) return '[]';
+        return `[${this._describeResponseShape(obj[0], depth + 1, maxDepth)}, ... (${obj.length} items)]`;
+      }
+      if (typeof obj === 'object') {
+        const keys = Object.keys(obj);
+        if (keys.length === 0) return '{}';
+        const fields = keys.slice(0, 8).map(k => {
+          const val = obj[k];
+          if (val === null) return `${k}: null`;
+          if (Array.isArray(val)) return `${k}: [${val.length > 0 ? typeof val[0] + '...' : ''}] (${val.length})`;
+          if (typeof val === 'object') return `${k}: {${Object.keys(val).slice(0, 3).join(', ')}${Object.keys(val).length > 3 ? ', ...' : ''}}`;
+          return `${k}: ${typeof val}`;
+        });
+        return `{ ${fields.join(', ')}${keys.length > 8 ? `, ... +${keys.length - 8} more` : ''} }`;
+      }
+      return typeof obj;
+    }
+
+    // ═══════════════════════════════════════════════════════════════════
+    //  API Auto-Suggest — detect "implement/integrate" and search docs
+    // ═══════════════════════════════════════════════════════════════════
+
+    /**
+     * Called on every prompt input. Detects implementation-related keywords,
+     * extracts the search term, and shows matching API doc suggestions.
+     */
+    checkApiSuggest() {
+      const text = this.root.querySelector('#ai-prompt')?.value || '';
+
+      // If dismissed, re-enable when text meaningfully changes
+      if (this._apiSuggestDismissed) {
+        if (text === this._apiSuggestDismissedText) return;
+        this._apiSuggestDismissed = false;
+        this._apiSuggestDismissedText = '';
+      }
+
+      // Must be logged in and have docs
+      if (!this._currentUser) {
+        this.root.querySelector('#api-suggest-bar')?.classList.remove('visible');
+        return;
+      }
+
+      // Check if any implementation pattern matches
+      const hasImplement = this._implementPatterns.some(p => p.test(text));
+      if (!hasImplement || text.trim().length < 4) {
+        this.root.querySelector('#api-suggest-bar')?.classList.remove('visible');
+        return;
+      }
+
+      // Extract the search query — strip the trigger keywords to get the "what"
+      const searchQuery = this._extractApiSearchQuery(text);
+      if (!searchQuery || searchQuery.length < 2) {
+        this.root.querySelector('#api-suggest-bar')?.classList.remove('visible');
+        return;
+      }
+
+      // Debounce to avoid hammering on every keystroke
+      clearTimeout(this._apiSuggestDebounce);
+      this._apiSuggestDebounce = setTimeout(() => {
+        this._runApiSuggest(searchQuery);
+      }, 250);
+    }
+
+    /**
+     * Extract the meaningful search query from the prompt.
+     * E.g. "implement login endpoint" → "login endpoint"
+     *      "create user registration" → "user registration"
+     *      "integrate payment api" → "payment api"
+     */
+    _extractApiSearchQuery(text) {
+      // Strip common trigger words to get the subject
+      const stripped = text
+        .replace(/\b(implement(ation|ing|ed|s)?)\b/gi, '')
+        .replace(/\b(integrat(e|ion|ing|ed|s)?)\b/gi, '')
+        .replace(/\b(build(ing|s)?)\b/gi, '')
+        .replace(/\b(creat(e|ing|ion|ed|s)?)\b/gi, '')
+        .replace(/\b(add(ing|ed|s)?)\b/gi, '')
+        .replace(/\b(connect(ing|ed|s)?)\b/gi, '')
+        .replace(/\b(consum(e|ing|ed|s)?)\b/gi, '')
+        .replace(/\b(call(ing|ed|s)?)\b/gi, '')
+        .replace(/\b(hook\s*up|wire\s*up|set\s*up)\b/gi, '')
+        .replace(/\b(fetch(ing|ed|es)?)\b/gi, '')
+        .replace(/\b(use|using)\b/gi, '')
+        .replace(/\b(the|a|an|to|for|from|with|this|that|our|my)\b/gi, '')
+        .replace(/\b(api|endpoint|route|function|method|service)\b/gi, '')
+        .replace(/\s+/g, ' ')
+        .trim();
+      return stripped;
+    }
+
+    /**
+     * Ensure all API doc collections are fetched and cached for searching.
+     * Only fetches each doc once. Returns when all are ready.
+     */
+    async _ensureApiDocsCached() {
+      if (!this._currentUser || !this.isExtensionContextValid()) return;
+
+      // Load doc list if missing
+      if (!this._apiDocs?.length) {
+        try {
+          const response = await new Promise((resolve, reject) => {
+            try {
+              chrome.runtime.sendMessage({ action: 'nexus-docs-list', userId: this._currentUser.uid }, (r) => {
+                if (chrome.runtime.lastError) reject(chrome.runtime.lastError);
+                else resolve(r);
+              });
+            } catch (e) { reject(e); }
+          });
+          if (response?.ok && response.docs) this._apiDocs = response.docs;
+        } catch { /* ignore */ }
+      }
+
+      if (!this._apiDocs?.length) return;
+
+      // Fetch collection data for any doc not yet cached (in parallel)
+      const uncached = this._apiDocs.filter(d => !this._apiAttachCache[d.id]);
+      if (!uncached.length) return;
+
+      // Flag to avoid re-fetching while in progress
+      if (this._apiCacheFetching) return;
+      this._apiCacheFetching = true;
+
+      try {
+        await Promise.all(uncached.map(async (doc) => {
+          try {
+            const response = await new Promise((resolve, reject) => {
+              try {
+                chrome.runtime.sendMessage({ action: 'nexus-docs-get', docId: doc.id }, (r) => {
+                  if (chrome.runtime.lastError) reject(chrome.runtime.lastError);
+                  else resolve(r);
+                });
+              } catch (e) { reject(e); }
+            });
+            if (response?.ok && response.doc?.collectionJson) {
+              const json = response.doc.collectionJson;
+              const collection = typeof json === 'object' ? json : JSON.parse(json);
+              if (collection?.item) {
+                this._apiAttachCache[doc.id] = collection;
+              }
+            }
+          } catch { /* skip this doc */ }
+        }));
+      } finally {
+        this._apiCacheFetching = false;
+      }
+    }
+
+    /**
+     * Search all cached API doc collections for matches and render suggestions.
+     */
+    async _runApiSuggest(query) {
+      const bar = this.root.querySelector('#api-suggest-bar');
+      const itemsEl = this.root.querySelector('#api-suggest-items');
+      if (!bar || !itemsEl) return;
+
+      // Show loading state while fetching docs
+      const needsFetch = !this._apiDocs?.length || (this._apiDocs || []).some(d => !this._apiAttachCache[d.id]);
+      if (needsFetch) {
+        bar.classList.add('visible');
+        itemsEl.innerHTML = '<span class="nx-suggest-no-match" style="display:inline-flex;align-items:center;gap:5px;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="animation:spin 1s linear infinite;"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg> Loading API docs...</span>';
+      }
+
+      // Ensure all docs are fetched and cached
+      await this._ensureApiDocsCached();
+
+      const lowerQ = query.toLowerCase();
+      const results = []; // { type, docId, docName, label, path, method?, url? }
+
+      // Search across all docs
+      for (const doc of (this._apiDocs || [])) {
+        const docName = doc.name || 'Untitled';
+
+        // Match on collection name
+        if (docName.toLowerCase().includes(lowerQ)) {
+          results.push({ type: 'doc', docId: doc.id, docName, label: docName, path: docName });
+        }
+
+        // Search within the collection's endpoints and folders
+        const cached = this._apiAttachCache[doc.id];
+        if (cached?.item) {
+          this._searchItems(cached.item, lowerQ, doc.id, docName, '', results);
+        }
+      }
+
+      // Deduplicate and cap at 8
+      const unique = [];
+      const seen = new Set();
+      for (const r of results) {
+        const key = `${r.type}:${r.docId}:${r.path}`;
+        if (!seen.has(key)) {
+          seen.add(key);
+          unique.push(r);
+        }
+        if (unique.length >= 8) break;
+      }
+
+      if (unique.length === 0) {
+        bar.classList.remove('visible');
+        return;
+      }
+
+      bar.classList.add('visible');
+      itemsEl.innerHTML = unique.map((item, i) => {
+        const isAttached = this._attachedApiItems.some(a => a.type === item.type && a.docId === item.docId && a.path === item.path);
+        if (item.type === 'endpoint') {
+          return `<button class="nx-api-suggest-item ${isAttached ? 'attached' : ''}" data-idx="${i}">
+            <span class="nx-suggest-method ${(item.method || 'get').toLowerCase()}">${item.method || 'GET'}</span>
+            ${this.escHtml(item.label)}
+          </button>`;
+        } else if (item.type === 'folder') {
+          return `<button class="nx-api-suggest-item ${isAttached ? 'attached' : ''}" data-idx="${i}">📁 ${this.escHtml(item.label)}</button>`;
+        } else {
+          return `<button class="nx-api-suggest-item ${isAttached ? 'attached' : ''}" data-idx="${i}">📄 ${this.escHtml(item.label)}</button>`;
+        }
+      }).join('');
+
+      // Wire click to attach
+      itemsEl.querySelectorAll('.nx-api-suggest-item').forEach(el => {
+        el.addEventListener('click', () => {
+          const idx = parseInt(el.dataset.idx, 10);
+          const item = unique[idx];
+          if (!item) return;
+          this.toggleApiAttach(item);
+          const isNow = this._attachedApiItems.some(a => a.type === item.type && a.docId === item.docId && a.path === item.path);
+          el.classList.toggle('attached', isNow);
+        });
+      });
+    }
+
+    /**
+     * Recursively search Postman collection items for matches.
+     */
+    _searchItems(items, query, docId, docName, parentPath, results) {
+      if (!Array.isArray(items) || results.length >= 12) return;
+      for (const item of items) {
+        if (results.length >= 12) break;
+        const itemPath = parentPath ? `${parentPath} / ${item.name}` : item.name;
+        if (item.item && Array.isArray(item.item)) {
+          // Folder
+          if ((item.name || '').toLowerCase().includes(query)) {
+            results.push({ type: 'folder', docId, docName, label: item.name, path: itemPath });
+          }
+          this._searchItems(item.item, query, docId, docName, itemPath, results);
+        } else if (item.request) {
+          // Endpoint
+          const method = (item.request.method || 'GET').toUpperCase();
+          const url = typeof item.request.url === 'string'
+            ? item.request.url
+            : (item.request.url?.raw || item.request.url?.path?.join('/') || '');
+          const name = item.name || url;
+          if (name.toLowerCase().includes(query) || url.toLowerCase().includes(query)) {
+            results.push({ type: 'endpoint', docId, docName, method, url, label: name, path: itemPath });
+          }
+        }
+      }
     }
 
     async saveSettings() {

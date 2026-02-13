@@ -10,9 +10,11 @@ Comprehensive technical reference for the Nexus Helper Chrome extension.
 - [File Reference](#file-reference)
 - [Floating Widget](#floating-widget)
   - [Widget States](#widget-states)
+  - [Minimized Capsule](#minimized-capsule)
   - [Position Memory](#position-memory)
   - [Peek Mode](#peek-mode)
   - [Drag & Resize](#drag--resize)
+  - [Header Bar](#header-bar)
 - [AI Context Engine](#ai-context-engine)
   - [Context Sections](#context-sections)
   - [Context Output Format](#context-output-format)
@@ -20,6 +22,12 @@ Comprehensive technical reference for the Nexus Helper Chrome extension.
   - [Intent Auto-Detection](#intent-auto-detection)
   - [Intent Badge](#intent-badge)
   - [Token Estimation](#token-estimation)
+- [API Docs Integration](#api-docs-integration)
+  - [Firebase Authentication](#firebase-authentication)
+  - [API Docs Browser](#api-docs-browser)
+  - [API Docs Attach Panel](#api-docs-attach-panel)
+  - [Smart API Auto-Suggest](#smart-api-auto-suggest)
+  - [API Reference in Context](#api-reference-in-context)
 - [Editor Integration](#editor-integration)
   - [Supported Editors](#supported-editors)
   - [URL Schemes](#url-schemes)
@@ -63,7 +71,8 @@ Nexus Helper uses Chrome Extension Manifest V3 with the following execution cont
 │  │  Floating Widget (floating-widget.js)              │  │
 │  │  - Shadow DOM (isolated styles)                    │  │
 │  │  - Full UI: editor, tabs, settings, debug          │  │
-│  │  - AI context engine (11 context builders)         │  │
+│  │  - AI context engine (16 context builders)         │  │
+│  │  - API docs attach, auto-suggest, Firebase auth    │  │
 │  │  - Autocomplete, speech, presets, intent detect    │  │
 │  └──────┬─────────────────────────────────────────────┘  │
 │         │ chrome.runtime.sendMessage                     │
@@ -74,6 +83,9 @@ Nexus Helper uses Chrome Extension Manifest V3 with the following execution cont
 │  - Screenshot capture (chrome.tabs.captureVisibleTab)    │
 │  - Editor URL scheme generation                          │
 │  - Route tracking (webNavigation API)                    │
+│  - Firebase Auth REST API (sign-in, sign-up, refresh)    │
+│  - Firestore REST API (docs list, get, chunked reads)    │
+│  - Google Sign-in (chrome.identity.launchWebAuthFlow)    │
 │  - Message routing between contexts                      │
 │  - Tab error caching (session storage)                   │
 └──────────────────────────────────────────────────────────┘
@@ -83,20 +95,22 @@ Nexus Helper uses Chrome Extension Manifest V3 with the following execution cont
 1. Main-world scripts use `postMessage` to send data to the content script / widget
 2. Content script and widget use `chrome.runtime.sendMessage` to talk to the background worker
 3. Background worker uses `chrome.tabs.sendMessage` to relay data back to tabs
+4. Firebase REST API calls are made exclusively from the background worker (avoids CORS)
 
 ---
 
 ## File Reference
 
 ### `manifest.json`
-Chrome Extension manifest (v3). Declares permissions, content scripts, background worker, keyboard commands, and web-accessible resources.
+Chrome Extension manifest (v3). Declares permissions (`activeTab`, `clipboardWrite`, `storage`, `tabs`, `scripting`, `webNavigation`, `identity`), content scripts, background worker, keyboard commands, and web-accessible resources.
 
 ### `scripts/floating-widget.js`
-The main widget -- a self-contained IIFE (~5700 lines) that:
+The main widget -- a self-contained IIFE (~7800+ lines) that:
 - Creates a custom element with Shadow DOM for style isolation
 - Renders all UI (CSS + HTML) inside the shadow root
-- Implements the full AI context engine
+- Implements the full AI context engine (16 context sections)
 - Manages widget state, drag/resize, autocomplete, speech, presets
+- Handles Firebase auth UI, API docs browsing, and API docs attach/suggest
 
 ### `scripts/content.js`
 Injected at `document_start` into every page. Captures:
@@ -110,7 +124,15 @@ Service worker that handles:
 - Screenshot capture via `chrome.tabs.captureVisibleTab`
 - Editor URL scheme generation (cursor://, vscode://, etc.)
 - Route tracking via `webNavigation` API
+- Firebase Auth REST API (sign-up, sign-in, token refresh, lookup, Google sign-in)
+- Firestore REST API (list docs, get doc with chunked reassembly and pagination)
 - Message routing between content scripts and popup
+
+### `scripts/firebase-config.js`
+Firebase project configuration shared with the NexusDocer platform:
+- `NEXUS_FIREBASE_CONFIG` -- API key, project ID, auth domain, Google client ID
+- `NEXUS_FIRESTORE_COLLECTION` -- Firestore collection name (`published_docs`)
+- `NEXUS_FIRESTORE_CHUNKS` -- Subcollection for chunked documents (`chunks`)
 
 ### `scripts/main-world-network.js`
 Runs in the page's main world (not isolated). Intercepts:
@@ -153,11 +175,28 @@ The widget has three visual states managed by `data-state` attribute:
 
 | State | Description |
 |---|---|
-| `collapsed` | Minimized -- small circular breathing health dot. Expands on hover to show quick action buttons |
+| `collapsed` | Minimized -- glassmorphic capsule with Nexus logo + health dot. Expands to action bar on hover |
 | `expanded` | Standard size -- full editor, tabs, debug panel |
 | `bigger` | Maximized -- takes more screen space for detailed work |
 
 State transitions: `collapsed <-> expanded <-> bigger`
+
+### Minimized Capsule
+
+The collapsed state features a polished, modern design:
+
+**Resting state:**
+- Glassmorphic capsule with `backdrop-filter: blur(16px)` and elevated shadow
+- **Nexus logo** in primary accent color with a subtle glow (`filter: drop-shadow`)
+- **Breathing health dot** (8px) with a smooth 3s animation cycle
+- Green = healthy, red = errors detected
+
+**Hover state (expanded action bar):**
+- Smoothly slides out 6 action buttons with 8px rounded corners:
+  - Screenshot, Copy Route, Copy Context (primary), Open Editor (primary), separator, Expand, Close (red on hover)
+- Buttons scale up (1.08x) on hover with background color transitions
+- Each button has a tooltip popup above on hover
+- `.nx-mini-action` class with `.primary` and `.danger` variants
 
 ### Position Memory
 
@@ -180,10 +219,21 @@ Both expanded and bigger states support "peek mode":
 
 ### Drag & Resize
 
-- **Drag**: Initiated on `mousedown` on the header bar or peek trigger
+- **Drag**: Initiated on `mousedown` on the header bar, mini trigger, or peek trigger
 - **Resize**: 8 edge handles (top, bottom, left, right, and 4 corners)
 - Both use `mousemove`/`mouseup` on `document` for smooth tracking
 - Constrained to viewport bounds
+
+### Header Bar
+
+The header contains (left to right):
+- **Logo** and **"Nexus"** title
+- **Health indicator** with label (Healthy/Errors)
+- **User avatar button** (`#header-user-btn`) -- shows initials when signed in, person icon when signed out
+  - Signed out: clicking opens Settings for auth
+  - Signed in: clicking toggles a dropdown with My API Docs, Manage Docs (external link to NexusDocer), Account Settings, Sign Out
+- **Info button** (`#info-btn`) -- opens nexushelper.web.app in new tab
+- **Settings**, **Theme toggle**, **Minimize**, **Maximize**, **Close** buttons
 
 ---
 
@@ -196,7 +246,7 @@ Each section has a dedicated builder method. All return `null`/empty string if n
 | Section | Method | Toggle ID | Description |
 |---|---|---|---|
 | Task | _(direct)_ | `ctx-include-prompt` | User's prompt text |
-| Framework | `buildFrameworkInfo()` | `ctx-include-framework` | Next.js/Nuxt/Vite version, React/Vue version, TypeScript, environment, viewport |
+| Framework | `buildFrameworkInfo()` | `ctx-include-framework` | Next.js/Nuxt/Vite version, React/Vue version, TypeScript, environment |
 | Page | _(direct)_ | `ctx-include-route` | Route path and title as self-closing XML tag |
 | Route Params | `buildRouteParams()` | `ctx-include-route-params` | URL query params, hash, dynamic route segments |
 | Selection | _(direct)_ | `ctx-include-selection` | Currently selected text on the page |
@@ -207,6 +257,7 @@ Each section has a dedicated builder method. All return `null`/empty string if n
 | Errors | `buildStructuredErrors()` | `ctx-include-structured-errors` | Stack traces with source mapping and component boundaries |
 | Data Fetching | `buildDataFetchingSummary()` | `ctx-include-data-fetching` | Pending/completed/failed requests with timing |
 | API Shapes | `buildAPIShapes()` | `ctx-include-api-shapes` | JSON shape descriptions of successful API responses |
+| API Reference | `buildApiReferenceContext()` | _(always if attached)_ | Attached API docs with full request/response details |
 | Accessibility | `buildAccessibilityTree()` | `ctx-include-a11y` | ARIA landmarks, semantic tree, live regions |
 | Viewport | `buildViewportInfo()` | `ctx-include-viewport` | Device type, dimensions, media queries, user prefs |
 | Performance | `buildPerformanceHints()` | `ctx-include-perf` | Core Web Vitals, slow requests, DOM stats, memory |
@@ -246,6 +297,27 @@ query: ?redirect=/dashboard
   at processChild (react-dom.development.js:1234:5)
   Component: LoginForm > AuthLayout > RootLayout
 </errors>
+
+<api_reference>
+## POST {{baseUrl}}/api/v1/auth/login
+Name: User Login
+Collection: SAS API
+
+Authenticates a user and returns an access token.
+Headers:
+  X-Api-Key: {{apiKey}}
+Body (json):
+{
+  "email": "user@example.com",
+  "password": "secret123"
+}
+Auth: bearer
+Response examples:
+  [200] Success
+  { token: string, user: { id: string, email: string, role: string } }
+  [401] Unauthorized
+  { error: string, message: string }
+</api_reference>
 
 <ui_state>
 Forms: 1 (login-form: email[empty], password[empty])
@@ -289,7 +361,7 @@ Defined in `_intentDefinitions` array. Each intent has:
 3. `updateLivePreset()` is called on every keystroke in the prompt
 4. Visual feedback: preset button highlighting + intent badge
 
-**Supported intents:** `bug`, `ui`, `performance`, `data`, `a11y`, `routing`, `form`
+**Supported intents:** `bug`, `ui`, `performance`, `data`, `a11y`, `routing`, `form`, `implement`
 
 ### Intent Badge
 
@@ -309,6 +381,120 @@ Visual indicators in `#ctx-token-counter`:
 - Normal: default color
 - `nx-tokens-high` (>2,000 tokens): yellow warning
 - `nx-tokens-danger` (>4,000 tokens): red warning
+
+---
+
+## API Docs Integration
+
+### Firebase Authentication
+
+Authentication uses Firebase REST APIs from the background service worker:
+
+| Endpoint | Purpose |
+|---|---|
+| `accounts:signInWithPassword` | Email/password sign-in |
+| `accounts:signUp` | New account registration |
+| `accounts:signInWithIdp` | Google sign-in (via OAuth token exchange) |
+| `accounts:lookup` | Get user profile from ID token |
+| `token` (SecureToken API) | Refresh expired ID tokens |
+
+**Token management:**
+- Tokens stored in `chrome.storage.local` under `nexusAuth` key
+- `getValidIdToken()` auto-refreshes expired tokens (1-hour expiry with 5-min buffer)
+- `storeAuthTokens()` saves idToken, refreshToken, expiresAt, and user info
+
+**Google Sign-in flow:**
+1. `chrome.identity.launchWebAuthFlow()` opens Google OAuth consent screen
+2. Redirect URI: `https://{extensionId}.chromiumapp.org/`
+3. Access token extracted from redirect URL
+4. Exchanged with Firebase `signInWithIdp` for a Firebase ID token
+
+### API Docs Browser
+
+The **API Docs** tab displays published collections from NexusDocer:
+
+1. `loadApiDocs()` calls `nexus-docs-list` message with the user's UID
+2. Firestore `runQuery` returns docs where `ownerId == userId`, ordered by `updatedAt`
+3. Each doc card shows name, description, endpoint count, folder count, visibility
+4. Clicking a doc calls `nexus-docs-get` which fetches the full collection JSON
+5. **Chunked document support**: Large collections stored across subcollection chunks are automatically reassembled with pagination (`pageSize=100`, `nextPageToken`)
+6. `renderApiEndpoints()` displays the Postman collection structure (folders + endpoints)
+
+### API Docs Attach Panel
+
+A toolbar button (book icon) opens a floating search panel:
+
+**Components:**
+- `#api-attach-panel` -- floating panel above the toolbar
+- `#api-attach-search` -- search input with live filtering
+- `#api-attach-body` -- scrollable results area
+- `#api-attached-chips` -- attached items shown as removable chips
+
+**Hierarchy:**
+```
+Collection (+ Doc button)
+  └── Folder (+ button)
+      └── Endpoint (click to attach)
+```
+
+**Key methods:**
+- `toggleApiAttachPanel()` -- show/hide the panel
+- `loadApiAttachPanel()` -- fetch docs list if needed
+- `loadApiAttachDocChildren()` -- fetch and cache collection JSON for a doc
+- `renderApiAttachItems()` -- render folders and endpoints with attach buttons
+- `filterApiAttachPanel()` -- live search across all items
+- `toggleApiAttach()` -- add/remove an item from `_attachedApiItems`
+- `renderAttachedChips()` -- update the chips bar below the prompt
+
+### Smart API Auto-Suggest
+
+When the user types implementation-related keywords, matching API docs are automatically suggested.
+
+**Trigger patterns** (`_implementPatterns`):
+- `implement`, `integrate`, `build`, `create`, `add`, `connect`, `consume`, `call`, `fetch`, `hook up`, `wire up`, `set up`, `use...api`
+
+**Flow:**
+1. `checkApiSuggest()` fires on every prompt input
+2. If a trigger keyword is detected, `_extractApiSearchQuery()` strips trigger words to get the subject
+   - Example: "implement login endpoint" → "login"
+3. `_runApiSuggest()` is called (debounced at 250ms)
+4. `_ensureApiDocsCached()` auto-fetches all collection data in parallel (first time only)
+5. `_searchItems()` recursively searches all collections for matches
+6. Results shown in `#api-suggest-bar` as clickable chips
+7. Click to attach -- item highlighted, full API content included in context
+
+**UX details:**
+- Loading spinner shown while fetching docs: "Loading API docs..."
+- Dismissable with X button; re-enables when text changes
+- Capped at 8 suggestions, deduplicated
+- Results show method badge (colored) + name for endpoints, folder icon for folders
+
+### API Reference in Context
+
+`buildApiReferenceContext()` generates rich API documentation from attached items:
+
+**For endpoints** (`_formatSingleEndpoint()`):
+- Method + URL
+- Name and collection
+- Description (up to 400 chars)
+- Headers (filtered, skip common ones)
+- Query params with descriptions
+- Path variables with descriptions
+- Body (raw JSON, form-urlencoded, or form-data)
+- Auth type
+- Response examples with status codes and JSON shape analysis
+
+**For folders** (`_formatEndpointsDocs()`):
+- All endpoints within the folder formatted with the above detail
+
+**For collections:**
+- Collection description + all endpoints
+
+**Helper methods:**
+- `_extractPostmanUrl()` -- handles string URLs and Postman URL objects
+- `_formatRequestDetails()` -- headers, query, path vars, body, auth
+- `_formatResponseExamples()` -- response status + body shape
+- `_describeResponseShape()` -- converts JSON to concise type signatures
 
 ---
 
@@ -428,6 +614,7 @@ All data is stored in `chrome.storage.local`:
 | `projectFileIndex_*` | `{files: string[], folders: string[], updatedAt}` | Per-project file index |
 | `widgetState` | `{state, position, ...}` | Widget UI state |
 | `widgetAutoShow` | `boolean` | Whether widget auto-shows on page load |
+| `nexusAuth` | `{idToken, refreshToken, expiresAt, user}` | Firebase auth tokens |
 
 ---
 
@@ -446,6 +633,23 @@ All data is stored in `chrome.storage.local`:
 | `clearDebugInfo` | -- | `{ok}` |
 | `openInEditor` | `{editor, url, title, projectPath}` | `{ok, scheme}` |
 | `toggleWidget` | -- | -- |
+
+### Firebase Auth Messages
+
+| Action | Data | Response |
+|---|---|---|
+| `nexus-auth-signup` | `{email, password}` | `{ok, user}` |
+| `nexus-auth-signin` | `{email, password}` | `{ok, user}` |
+| `nexus-auth-google` | -- | `{ok, user}` |
+| `nexus-auth-signout` | -- | `{ok}` |
+| `nexus-auth-status` | -- | `{ok, user, isLoggedIn}` |
+
+### Firestore Messages
+
+| Action | Data | Response |
+|---|---|---|
+| `nexus-docs-list` | `{userId}` | `{ok, docs[]}` |
+| `nexus-docs-get` | `{docId}` | `{ok, doc}` |
 
 ### Background -> Tab
 
@@ -518,6 +722,11 @@ The widget uses Shadow DOM for complete style isolation:
 --nx-ring        /* Focus ring */
 ```
 
+Key animations:
+- `nx-breathe` -- health dot breathing glow (3s cycle)
+- `fade-in` -- dropdown/panel entrance (0.12s)
+- `spin` -- loading spinner rotation (1s)
+
 ---
 
 ## Security Considerations
@@ -526,10 +735,12 @@ The widget uses Shadow DOM for complete style isolation:
 2. **Event propagation** -- All widget events are stopped from bubbling to the page (`stopPropagation`)
 3. **Content Security** -- `detect-path.js` and `main-world-network.js` are declared as `web_accessible_resources`
 4. **Extension context** -- Graceful handling of invalidated extension contexts (after updates/reloads)
-5. **XSS prevention** -- HTML content in the "Open Folder" helper page is sanitized
-6. **Data limits** -- Response bodies capped at 1000 chars, errors capped at 20, network at 50
-7. **No remote code** -- All code is local; no external script loading
-8. **Clipboard access** -- Only writes to clipboard, never reads
+5. **XSS prevention** -- All user-generated content escaped with `escHtml()` before rendering
+6. **Firebase tokens** -- Stored in `chrome.storage.local`, auto-refreshed, never exposed to page
+7. **Google OAuth** -- Uses `chrome.identity.launchWebAuthFlow` (extension-only, secure redirect)
+8. **Data limits** -- Response bodies capped at 1000 chars, errors capped at 20, network at 50
+9. **No remote code** -- All code is local; no external script loading
+10. **Clipboard access** -- Only writes to clipboard, never reads
 
 ---
 
@@ -541,4 +752,4 @@ The widget uses Shadow DOM for complete style isolation:
 
 ---
 
-_Last updated: February 2026 | Nexus Helper v3.1.0_
+_Last updated: February 2026 | Nexus Helper v3.3.0_

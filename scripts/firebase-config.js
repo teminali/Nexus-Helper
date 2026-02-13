@@ -1,13 +1,15 @@
 // ═══════════════════════════════════════════════════════════════════════════════
 // Nexus Helper — Firebase Configuration
-// Fill in your Firebase project values below.
-// Get these from Firebase Console → Project Settings → General → Your apps
+// Shared with the Nexus Docs platform (postman-docs-viewer)
 // ═══════════════════════════════════════════════════════════════════════════════
 
 const NEXUS_FIREBASE_CONFIG = {
-  apiKey: '',                // e.g. 'AIzaSyB...'
-  projectId: '',             // e.g. 'my-project-12345'
-  authDomain: '',            // e.g. 'my-project-12345.firebaseapp.com'
+  apiKey: 'AIzaSyD2c2IX8q3KtZiqVz-VmFZ0ejVyVUzGCXk',
+  projectId: 'rabies-10776',
+  authDomain: 'rabies-10776.firebaseapp.com',
+  // Google OAuth Client ID — find it in Firebase Console:
+  // Authentication → Sign-in method → Google → Web SDK configuration → Web client ID
+  googleClientId: '447734176000-t8q3bpgbba3o3tpfjrr0hc55fu6s6v34.apps.googleusercontent.com',
 };
 
 // Firestore collection name (must match your postman-docs-viewer project)
