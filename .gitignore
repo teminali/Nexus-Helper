@@ -23,6 +23,10 @@ npm-debug.log*
 *.pem
 *.zip
 
+# Subprojects
+postman-docs-viewer/
+landing-page/
+
 # Environment / secrets
 .env
 .env.local

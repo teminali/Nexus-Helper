@@ -2,6 +2,7 @@
 // Handles screenshot capture, storage coordination, and message routing
 
 importScripts('storage.js');
+importScripts('firebase-config.js');
 
 // Track console errors per tab using session storage (survives service worker restarts)
 const tabErrorsCache = new Map(); // in-memory cache for fast sync access
@@ -381,6 +382,327 @@ chrome.action.onClicked.addListener((tab) => {
         files: ['scripts/floating-widget.js']
       });
     });
+  }
+});
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// Firebase Auth & Firestore (REST API)
+// ═══════════════════════════════════════════════════════════════════════════════
+
+const AUTH_BASE = 'https://identitytoolkit.googleapis.com/v1';
+const TOKEN_BASE = 'https://securetoken.googleapis.com/v1';
+const FIRESTORE_BASE = 'https://firestore.googleapis.com/v1';
+
+function fbApiKey() {
+  return typeof NEXUS_FIREBASE_CONFIG !== 'undefined' ? NEXUS_FIREBASE_CONFIG.apiKey : '';
+}
+
+function fbProjectId() {
+  return typeof NEXUS_FIREBASE_CONFIG !== 'undefined' ? NEXUS_FIREBASE_CONFIG.projectId : '';
+}
+
+function fbCollection() {
+  return typeof NEXUS_FIRESTORE_COLLECTION !== 'undefined' ? NEXUS_FIRESTORE_COLLECTION : 'published_docs';
+}
+
+function fbChunks() {
+  return typeof NEXUS_FIRESTORE_CHUNKS !== 'undefined' ? NEXUS_FIRESTORE_CHUNKS : 'chunks';
+}
+
+// ── Auth helpers ──────────────────────────────────────────────────────────────
+
+async function nexusAuthSignUp(email, password) {
+  const res = await fetch(`${AUTH_BASE}/accounts:signUp?key=${fbApiKey()}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, password, returnSecureToken: true })
+  });
+  const data = await res.json();
+  if (data.error) throw new Error(data.error.message || 'Sign up failed');
+  await storeAuthTokens(data);
+  return { uid: data.localId, email: data.email, displayName: data.displayName || '' };
+}
+
+async function nexusAuthSignIn(email, password) {
+  const res = await fetch(`${AUTH_BASE}/accounts:signInWithPassword?key=${fbApiKey()}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, password, returnSecureToken: true })
+  });
+  const data = await res.json();
+  if (data.error) throw new Error(data.error.message || 'Sign in failed');
+  await storeAuthTokens(data);
+  return { uid: data.localId, email: data.email, displayName: data.displayName || '' };
+}
+
+async function nexusAuthSignOut() {
+  await chrome.storage.local.remove(['nexusAuth']);
+  return { ok: true };
+}
+
+async function nexusAuthStatus() {
+  const stored = await chrome.storage.local.get(['nexusAuth']);
+  if (!stored.nexusAuth) return { user: null };
+
+  const auth = stored.nexusAuth;
+  // Check if token is expired
+  const now = Date.now();
+  if (auth.expiresAt && now >= auth.expiresAt) {
+    // Try to refresh
+    try {
+      const refreshed = await nexusAuthRefresh(auth.refreshToken);
+      return { user: { uid: refreshed.uid, email: refreshed.email, displayName: refreshed.displayName || '' } };
+    } catch (e) {
+      await chrome.storage.local.remove(['nexusAuth']);
+      return { user: null };
+    }
+  }
+
+  return { user: { uid: auth.uid, email: auth.email, displayName: auth.displayName || '' } };
+}
+
+async function nexusAuthRefresh(refreshToken) {
+  if (!refreshToken) throw new Error('No refresh token');
+  const res = await fetch(`${TOKEN_BASE}/token?key=${fbApiKey()}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ grant_type: 'refresh_token', refresh_token: refreshToken })
+  });
+  const data = await res.json();
+  if (data.error) throw new Error(data.error.message || 'Token refresh failed');
+
+  const authData = {
+    idToken: data.id_token,
+    refreshToken: data.refresh_token,
+    localId: data.user_id,
+    email: '', // fetch from lookup
+    expiresIn: data.expires_in
+  };
+
+  // Lookup user info to get email/displayName
+  try {
+    const info = await nexusAuthLookup(data.id_token);
+    authData.email = info.email || '';
+    authData.displayName = info.displayName || '';
+  } catch (_) {}
+
+  await storeAuthTokens(authData);
+  return { uid: authData.localId, email: authData.email, displayName: authData.displayName };
+}
+
+async function nexusAuthLookup(idToken) {
+  const res = await fetch(`${AUTH_BASE}/accounts:lookup?key=${fbApiKey()}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ idToken })
+  });
+  const data = await res.json();
+  if (data.error) throw new Error(data.error.message);
+  const user = data.users?.[0];
+  return { uid: user?.localId, email: user?.email, displayName: user?.displayName || '' };
+}
+
+async function storeAuthTokens(data) {
+  const expiresIn = parseInt(data.expiresIn || '3600', 10);
+  await chrome.storage.local.set({
+    nexusAuth: {
+      idToken: data.idToken,
+      refreshToken: data.refreshToken,
+      uid: data.localId,
+      email: data.email || '',
+      displayName: data.displayName || '',
+      expiresAt: Date.now() + (expiresIn * 1000) - 60000 // 1 min buffer
+    }
+  });
+}
+
+async function getValidIdToken() {
+  const stored = await chrome.storage.local.get(['nexusAuth']);
+  if (!stored.nexusAuth) return null;
+  const auth = stored.nexusAuth;
+  if (auth.expiresAt && Date.now() >= auth.expiresAt) {
+    try {
+      await nexusAuthRefresh(auth.refreshToken);
+      const refreshed = await chrome.storage.local.get(['nexusAuth']);
+      return refreshed.nexusAuth?.idToken || null;
+    } catch (e) {
+      return null;
+    }
+  }
+  return auth.idToken;
+}
+
+// ── Firestore helpers ─────────────────────────────────────────────────────────
+
+function firestoreDocUrl(path) {
+  return `${FIRESTORE_BASE}/projects/${fbProjectId()}/databases/(default)/documents/${path}`;
+}
+
+function parseFirestoreValue(val) {
+  if (!val) return null;
+  if ('stringValue' in val) return val.stringValue;
+  if ('integerValue' in val) return parseInt(val.integerValue, 10);
+  if ('doubleValue' in val) return val.doubleValue;
+  if ('booleanValue' in val) return val.booleanValue;
+  if ('nullValue' in val) return null;
+  if ('timestampValue' in val) return val.timestampValue;
+  if ('arrayValue' in val) return (val.arrayValue.values || []).map(parseFirestoreValue);
+  if ('mapValue' in val) {
+    const obj = {};
+    for (const [k, v] of Object.entries(val.mapValue.fields || {})) {
+      obj[k] = parseFirestoreValue(v);
+    }
+    return obj;
+  }
+  return null;
+}
+
+function parseFirestoreDoc(doc) {
+  if (!doc || !doc.fields) return null;
+  const fields = doc.fields;
+  const id = doc.name ? doc.name.split('/').pop() : '';
+  const parsed = { id };
+  for (const [key, val] of Object.entries(fields)) {
+    parsed[key] = parseFirestoreValue(val);
+  }
+  return parsed;
+}
+
+async function nexusListMyDocs(userId) {
+  const idToken = await getValidIdToken();
+  if (!idToken) throw new Error('Not authenticated');
+
+  const url = `${FIRESTORE_BASE}/projects/${fbProjectId()}/databases/(default)/documents:runQuery`;
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${idToken}`
+    },
+    body: JSON.stringify({
+      structuredQuery: {
+        from: [{ collectionId: fbCollection() }],
+        where: {
+          fieldFilter: {
+            field: { fieldPath: 'ownerId' },
+            op: 'EQUAL',
+            value: { stringValue: userId }
+          }
+        },
+        orderBy: [{ field: { fieldPath: 'updatedAt' }, direction: 'DESCENDING' }],
+        select: {
+          fields: [
+            { fieldPath: 'name' },
+            { fieldPath: 'description' },
+            { fieldPath: 'visibility' },
+            { fieldPath: 'endpointCount' },
+            { fieldPath: 'folderCount' },
+            { fieldPath: 'chunkCount' },
+            { fieldPath: 'ownerId' },
+            { fieldPath: 'ownerEmail' },
+            { fieldPath: 'updatedAt' },
+            { fieldPath: 'createdAt' }
+          ]
+        }
+      }
+    })
+  });
+
+  const data = await res.json();
+  if (data.error) throw new Error(data.error.message || 'Failed to list docs');
+
+  // runQuery returns array of { document, readTime } or { readTime } for empty results
+  const docs = [];
+  if (Array.isArray(data)) {
+    for (const item of data) {
+      if (item.document) {
+        const parsed = parseFirestoreDoc(item.document);
+        if (parsed) docs.push(parsed);
+      }
+    }
+  }
+  return docs;
+}
+
+async function nexusGetDoc(docId) {
+  const idToken = await getValidIdToken();
+  if (!idToken) throw new Error('Not authenticated');
+
+  // Get main document
+  const url = firestoreDocUrl(`${fbCollection()}/${docId}`);
+  const res = await fetch(url, {
+    headers: { 'Authorization': `Bearer ${idToken}` }
+  });
+  const data = await res.json();
+  if (data.error) throw new Error(data.error.message || 'Doc not found');
+
+  const doc = parseFirestoreDoc(data);
+  if (!doc) throw new Error('Failed to parse document');
+
+  let collectionJson = doc.collectionJson || null;
+
+  // If chunked, read chunks
+  if (!collectionJson && (doc.chunkCount || 0) > 0) {
+    const chunksUrl = firestoreDocUrl(`${fbCollection()}/${docId}/${fbChunks()}`);
+    const chunksRes = await fetch(chunksUrl, {
+      headers: { 'Authorization': `Bearer ${idToken}` }
+    });
+    const chunksData = await chunksRes.json();
+    if (chunksData.documents && Array.isArray(chunksData.documents)) {
+      const sorted = chunksData.documents
+        .map(d => parseFirestoreDoc(d))
+        .filter(Boolean)
+        .sort((a, b) => (a.index || 0) - (b.index || 0));
+      collectionJson = sorted.map(c => c.data || '').join('');
+    }
+  }
+
+  return { ...doc, collectionJson };
+}
+
+// ── Message listener for auth & docs ──────────────────────────────────────────
+
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  if (message.action === 'nexus-auth-signup') {
+    nexusAuthSignUp(message.email, message.password)
+      .then(user => sendResponse({ ok: true, user }))
+      .catch(err => sendResponse({ ok: false, error: String(err.message || err) }));
+    return true;
+  }
+
+  if (message.action === 'nexus-auth-signin') {
+    nexusAuthSignIn(message.email, message.password)
+      .then(user => sendResponse({ ok: true, user }))
+      .catch(err => sendResponse({ ok: false, error: String(err.message || err) }));
+    return true;
+  }
+
+  if (message.action === 'nexus-auth-signout') {
+    nexusAuthSignOut()
+      .then(() => sendResponse({ ok: true }))
+      .catch(err => sendResponse({ ok: false, error: String(err.message || err) }));
+    return true;
+  }
+
+  if (message.action === 'nexus-auth-status') {
+    nexusAuthStatus()
+      .then(result => sendResponse({ ok: true, ...result }))
+      .catch(err => sendResponse({ ok: false, error: String(err.message || err), user: null }));
+    return true;
+  }
+
+  if (message.action === 'nexus-docs-list') {
+    nexusListMyDocs(message.userId)
+      .then(docs => sendResponse({ ok: true, docs }))
+      .catch(err => sendResponse({ ok: false, error: String(err.message || err), docs: [] }));
+    return true;
+  }
+
+  if (message.action === 'nexus-docs-get') {
+    nexusGetDoc(message.docId)
+      .then(doc => sendResponse({ ok: true, doc }))
+      .catch(err => sendResponse({ ok: false, error: String(err.message || err) }));
+    return true;
   }
 });
 

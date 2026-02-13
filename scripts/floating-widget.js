@@ -921,6 +921,158 @@
       line-height: 1;
     }
     .nx-intent-dismiss:hover { opacity: 1; background: hsl(var(--nx-border) / 0.5); }
+
+    /* ── Auth form styles ─────────────────────────────── */
+    .nx-auth-tabs {
+      display: flex;
+      gap: 0;
+      margin-bottom: 8px;
+      border-radius: 6px;
+      overflow: hidden;
+      border: 1px solid hsl(var(--nx-border));
+    }
+    .nx-auth-tab {
+      flex: 1;
+      padding: 5px 0;
+      font-size: 10px;
+      font-weight: 500;
+      text-align: center;
+      background: transparent;
+      color: hsl(var(--nx-muted-fg));
+      border: none;
+      cursor: pointer;
+      transition: background 0.15s, color 0.15s;
+    }
+    .nx-auth-tab[data-active="true"] {
+      background: hsl(var(--nx-primary));
+      color: hsl(var(--nx-primary-fg));
+    }
+    .nx-avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: hsl(var(--nx-primary));
+      color: hsl(var(--nx-primary-fg));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+      font-weight: 600;
+      flex-shrink: 0;
+    }
+
+    /* ── API Docs panel ───────────────────────────────── */
+    .nx-api-docs-list {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      max-height: 380px;
+      overflow-y: auto;
+    }
+    .nx-api-doc-card {
+      padding: 8px 10px;
+      border-radius: 7px;
+      border: 1px solid hsl(var(--nx-border));
+      background: hsl(var(--nx-secondary) / 0.3);
+      cursor: pointer;
+      transition: border-color 0.15s, background 0.15s;
+    }
+    .nx-api-doc-card:hover {
+      border-color: hsl(var(--nx-primary) / 0.4);
+      background: hsl(var(--nx-secondary) / 0.6);
+    }
+    .nx-api-doc-name {
+      font-size: 11px;
+      font-weight: 600;
+      color: hsl(var(--nx-fg));
+      margin-bottom: 2px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .nx-api-doc-description {
+      font-size: 9px;
+      color: hsl(var(--nx-muted-fg));
+      line-height: 1.3;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .nx-api-doc-stats {
+      display: flex;
+      gap: 8px;
+      margin-top: 4px;
+    }
+    .nx-api-doc-stat {
+      font-size: 9px;
+      color: hsl(var(--nx-muted-fg));
+      display: flex;
+      align-items: center;
+      gap: 3px;
+    }
+    .nx-api-doc-stat .dot {
+      width: 4px;
+      height: 4px;
+      border-radius: 50%;
+      background: hsl(var(--nx-primary));
+    }
+    .nx-api-endpoints-list {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      max-height: 340px;
+      overflow-y: auto;
+    }
+    .nx-endpoint-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 5px 8px;
+      border-radius: 5px;
+      border: 1px solid hsl(var(--nx-border) / 0.5);
+      font-size: 10px;
+      cursor: pointer;
+      transition: background 0.12s;
+    }
+    .nx-endpoint-item:hover { background: hsl(var(--nx-secondary) / 0.5); }
+    .nx-method-badge {
+      font-size: 8px;
+      font-weight: 700;
+      padding: 1px 4px;
+      border-radius: 3px;
+      text-transform: uppercase;
+      flex-shrink: 0;
+      letter-spacing: 0.03em;
+    }
+    .nx-method-badge.get { background: hsl(142 76% 36% / 0.15); color: hsl(142 76% 36%); }
+    .nx-method-badge.post { background: hsl(221 83% 53% / 0.15); color: hsl(221 83% 53%); }
+    .nx-method-badge.put { background: hsl(38 92% 50% / 0.15); color: hsl(38 92% 50%); }
+    .nx-method-badge.patch { background: hsl(38 92% 50% / 0.15); color: hsl(38 92% 50%); }
+    .nx-method-badge.delete { background: hsl(0 84% 60% / 0.15); color: hsl(0 84% 60%); }
+    .nx-endpoint-path {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 10px;
+      color: hsl(var(--nx-fg));
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .nx-folder-header {
+      font-size: 10px;
+      font-weight: 600;
+      color: hsl(var(--nx-muted-fg));
+      padding: 6px 0 3px 0;
+      border-bottom: 1px solid hsl(var(--nx-border) / 0.3);
+      margin-top: 4px;
+    }
+    .nx-api-empty {
+      text-align: center;
+      padding: 24px 12px;
+      color: hsl(var(--nx-muted-fg));
+      font-size: 11px;
+      line-height: 1.5;
+    }
+
     .nx-editor-toolbar {
       display: flex;
       align-items: center;
@@ -1451,6 +1603,7 @@
            <div class="nx-tabs">
               <div class="nx-tab" data-tab="capture" data-active="true">Capture</div>
               <div class="nx-tab" data-tab="debug">Network</div>
+              <div class="nx-tab" data-tab="api-docs">API Docs</div>
               <div class="nx-tab" data-tab="navigation">Navigation</div>
               <div class="nx-tab" data-tab="settings">Settings</div>
            </div>
@@ -1611,9 +1764,44 @@
                  </div>
                  <button class="nx-action-btn" id="save-settings-btn" style="width:100%; justify-content:center; font-size:11px;">Save Configuration</button>
               </div>
+              <!-- Account -->
+              <div class="nx-card" style="padding:10px; margin-top:6px;">
+                 <div class="nx-card-title">Account</div>
+                 <!-- Logged out state -->
+                 <div id="auth-logged-out">
+                    <div class="nx-auth-tabs">
+                       <button class="nx-auth-tab" data-auth-tab="login" data-active="true">Sign In</button>
+                       <button class="nx-auth-tab" data-auth-tab="register" data-active="false">Register</button>
+                    </div>
+                    <div class="nx-auth-form" id="auth-login-form">
+                       <input class="nx-input" id="auth-email" type="email" placeholder="Email" style="font-size:11px; margin-bottom:6px;" />
+                       <input class="nx-input" id="auth-password" type="password" placeholder="Password" style="font-size:11px; margin-bottom:6px;" />
+                       <div id="auth-error" style="display:none; font-size:10px; color:hsl(0 84% 60%); margin-bottom:6px; line-height:1.3;"></div>
+                       <button class="nx-action-btn" id="auth-signin-btn" style="width:100%; justify-content:center; font-size:11px; background:hsl(var(--nx-primary)); color:hsl(var(--nx-primary-fg));">Sign In</button>
+                    </div>
+                    <div class="nx-auth-form" id="auth-register-form" style="display:none;">
+                       <input class="nx-input" id="auth-reg-email" type="email" placeholder="Email" style="font-size:11px; margin-bottom:6px;" />
+                       <input class="nx-input" id="auth-reg-password" type="password" placeholder="Password (min 6 chars)" style="font-size:11px; margin-bottom:6px;" />
+                       <input class="nx-input" id="auth-reg-confirm" type="password" placeholder="Confirm password" style="font-size:11px; margin-bottom:6px;" />
+                       <div id="auth-reg-error" style="display:none; font-size:10px; color:hsl(0 84% 60%); margin-bottom:6px; line-height:1.3;"></div>
+                       <button class="nx-action-btn" id="auth-register-btn" style="width:100%; justify-content:center; font-size:11px; background:hsl(var(--nx-primary)); color:hsl(var(--nx-primary-fg));">Create Account</button>
+                    </div>
+                 </div>
+                 <!-- Logged in state -->
+                 <div id="auth-logged-in" style="display:none;">
+                    <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
+                       <div class="nx-avatar" id="auth-avatar">U</div>
+                       <div style="flex:1; min-width:0;">
+                          <div id="auth-user-email" style="font-size:11px; font-weight:500; color:hsl(var(--nx-fg)); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;"></div>
+                          <div id="auth-user-uid" style="font-size:9px; color:hsl(var(--nx-muted-fg)); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;"></div>
+                       </div>
+                    </div>
+                    <button class="nx-action-btn compact" id="auth-signout-btn" style="width:100%; justify-content:center; border:1px solid hsl(var(--nx-border)); font-size:10px;">Sign Out</button>
+                 </div>
+              </div>
               <div class="nx-card compact" style="display:flex; align-items:center; justify-content:space-between;">
                  <span style="font-size:11px; color:hsl(var(--nx-muted-fg));">Version</span>
-                 <span class="nx-badge outline">3.1.0</span>
+                 <span class="nx-badge outline">3.2.0</span>
               </div>
               <div class="nx-card" style="padding:10px; margin-top:6px;">
                  <div class="nx-card-title">Default Editor</div>
@@ -1642,6 +1830,39 @@
                     <button class="nx-action-btn compact" id="import-settings-btn" style="flex:1; justify-content:center; border:1px solid hsl(var(--nx-border)); font-size:10px;">⬆ Import</button>
                  </div>
                  <input type="file" id="import-file-input" accept=".json" style="display:none;" />
+              </div>
+           </div>
+
+           <!-- Panel: API Docs -->
+           <div class="nx-panel" id="panel-api-docs">
+              <!-- Not logged in -->
+              <div id="api-docs-auth-prompt" class="nx-card" style="padding:16px; text-align:center;">
+                 <div style="font-size:20px; margin-bottom:8px;">🔒</div>
+                 <div style="font-size:12px; font-weight:500; margin-bottom:4px; color:hsl(var(--nx-fg));">Sign in to access API Docs</div>
+                 <p style="font-size:10px; color:hsl(var(--nx-muted-fg)); margin:0 0 10px 0; line-height:1.4;">
+                    View your published Postman collections from the Nexus Docs platform.
+                 </p>
+                 <button class="nx-action-btn" id="api-docs-goto-login" style="justify-content:center; font-size:11px; background:hsl(var(--nx-primary)); color:hsl(var(--nx-primary-fg)); width:100%;">Go to Sign In</button>
+              </div>
+              <!-- Logged in — doc list -->
+              <div id="api-docs-content" style="display:none;">
+                 <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:8px;">
+                    <span style="font-size:12px; font-weight:500; color:hsl(var(--nx-fg));">My API Collections</span>
+                    <button class="nx-action-btn compact" id="api-docs-refresh" style="font-size:9px; border:1px solid hsl(var(--nx-border));">↻ Refresh</button>
+                 </div>
+                 <div id="api-docs-list" class="nx-api-docs-list">
+                    <div style="text-align:center; padding:20px; color:hsl(var(--nx-muted-fg)); font-size:11px;">Loading...</div>
+                 </div>
+              </div>
+              <!-- Doc detail view -->
+              <div id="api-docs-detail" style="display:none;">
+                 <button class="nx-action-btn compact" id="api-docs-back" style="font-size:10px; margin-bottom:8px; border:1px solid hsl(var(--nx-border));">← Back to list</button>
+                 <div id="api-docs-detail-header" style="margin-bottom:8px;">
+                    <div id="api-doc-title" style="font-size:13px; font-weight:600; color:hsl(var(--nx-fg));"></div>
+                    <div id="api-doc-desc" style="font-size:10px; color:hsl(var(--nx-muted-fg)); margin-top:2px; line-height:1.3;"></div>
+                    <div id="api-doc-meta" style="display:flex; gap:8px; margin-top:6px;"></div>
+                 </div>
+                 <div id="api-docs-endpoints" class="nx-api-endpoints-list"></div>
               </div>
            </div>
         </div>
@@ -1688,7 +1909,12 @@
           const target = tab.dataset.tab;
           const panels = this.root.querySelectorAll('.nx-panel');
           panels.forEach(p => p.setAttribute('data-active', 'false'));
-          this.root.querySelector(`#panel-${target}`).setAttribute('data-active', 'true');
+          this.root.querySelector(`#panel-${target}`)?.setAttribute('data-active', 'true');
+
+          // Auto-load API docs when tab is opened
+          if (target === 'api-docs' && this._currentUser) {
+            this.loadApiDocs();
+          }
         });
       });
 
@@ -1734,6 +1960,54 @@
       // Editor preference — auto-save on change
       this.root.querySelector('#setting-default-editor')?.addEventListener('change', () => this.saveEditorPreference());
       this.root.querySelector('#setting-auto-copy-context')?.addEventListener('change', () => this.saveEditorPreference());
+
+      // ── Auth event listeners ─────────────────────────────────────────────
+      // Auth tab toggle (login/register)
+      this.root.querySelectorAll('.nx-auth-tab').forEach(tab => {
+        tab.addEventListener('click', () => {
+          const mode = tab.dataset.authTab;
+          this.root.querySelectorAll('.nx-auth-tab').forEach(t => t.setAttribute('data-active', 'false'));
+          tab.setAttribute('data-active', 'true');
+          const loginForm = this.root.querySelector('#auth-login-form');
+          const regForm = this.root.querySelector('#auth-register-form');
+          if (loginForm) loginForm.style.display = mode === 'login' ? 'block' : 'none';
+          if (regForm) regForm.style.display = mode === 'register' ? 'block' : 'none';
+        });
+      });
+
+      // Sign in
+      this.root.querySelector('#auth-signin-btn')?.addEventListener('click', () => this.handleSignIn());
+      // Sign in on Enter key
+      this.root.querySelector('#auth-password')?.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') this.handleSignIn();
+      });
+
+      // Register
+      this.root.querySelector('#auth-register-btn')?.addEventListener('click', () => this.handleRegister());
+      this.root.querySelector('#auth-reg-confirm')?.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') this.handleRegister();
+      });
+
+      // Sign out
+      this.root.querySelector('#auth-signout-btn')?.addEventListener('click', () => this.handleSignOut());
+
+      // API Docs: go to login
+      this.root.querySelector('#api-docs-goto-login')?.addEventListener('click', () => {
+        // Switch to settings tab
+        this.root.querySelectorAll('.nx-tab').forEach(t => t.setAttribute('data-active', 'false'));
+        this.root.querySelectorAll('.nx-panel').forEach(p => p.setAttribute('data-active', 'false'));
+        this.root.querySelector('[data-tab="settings"]')?.setAttribute('data-active', 'true');
+        this.root.querySelector('#panel-settings')?.setAttribute('data-active', 'true');
+      });
+
+      // API Docs: refresh
+      this.root.querySelector('#api-docs-refresh')?.addEventListener('click', () => this.loadApiDocs());
+
+      // API Docs: back to list
+      this.root.querySelector('#api-docs-back')?.addEventListener('click', () => this.showApiDocsList());
+
+      // Check auth state on init
+      this.checkAuthState();
 
       // Export / Import settings
       this.root.querySelector('#export-settings-btn')?.addEventListener('click', () => this.exportSettings());
@@ -4231,6 +4505,344 @@
         btn.setAttribute('title', `Open ${name}`);
         btn.setAttribute('data-tooltip', `Open ${name}`);
       });
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // Auth & API Docs
+    // ═══════════════════════════════════════════════════════════════════════
+
+    _currentUser = null;
+    _apiDocs = [];
+
+    async checkAuthState() {
+      try {
+        if (!this.isExtensionContextValid()) return;
+        const response = await new Promise(resolve => {
+          chrome.runtime.sendMessage({ action: 'nexus-auth-status' }, resolve);
+        });
+        if (response?.user) {
+          this._currentUser = response.user;
+          this.updateAuthUI(true);
+          this.updateApiDocsAuthUI(true);
+        } else {
+          this._currentUser = null;
+          this.updateAuthUI(false);
+          this.updateApiDocsAuthUI(false);
+        }
+      } catch (e) {
+        this._currentUser = null;
+        this.updateAuthUI(false);
+        this.updateApiDocsAuthUI(false);
+      }
+    }
+
+    async handleSignIn() {
+      const email = this.root.querySelector('#auth-email')?.value?.trim();
+      const password = this.root.querySelector('#auth-password')?.value;
+      const errorEl = this.root.querySelector('#auth-error');
+
+      if (!email || !password) {
+        if (errorEl) { errorEl.textContent = 'Please enter email and password'; errorEl.style.display = 'block'; }
+        return;
+      }
+
+      const btn = this.root.querySelector('#auth-signin-btn');
+      if (btn) btn.textContent = 'Signing in...';
+
+      try {
+        const response = await new Promise(resolve => {
+          chrome.runtime.sendMessage({ action: 'nexus-auth-signin', email, password }, resolve);
+        });
+
+        if (response?.ok) {
+          this._currentUser = response.user;
+          this.updateAuthUI(true);
+          this.updateApiDocsAuthUI(true);
+          this.showToast(`Signed in as ${response.user.email}`);
+          if (errorEl) errorEl.style.display = 'none';
+          // Clear form
+          if (this.root.querySelector('#auth-email')) this.root.querySelector('#auth-email').value = '';
+          if (this.root.querySelector('#auth-password')) this.root.querySelector('#auth-password').value = '';
+        } else {
+          const msg = this.formatAuthError(response?.error || 'Sign in failed');
+          if (errorEl) { errorEl.textContent = msg; errorEl.style.display = 'block'; }
+        }
+      } catch (e) {
+        if (errorEl) { errorEl.textContent = 'Sign in failed'; errorEl.style.display = 'block'; }
+      }
+
+      if (btn) btn.textContent = 'Sign In';
+    }
+
+    async handleRegister() {
+      const email = this.root.querySelector('#auth-reg-email')?.value?.trim();
+      const password = this.root.querySelector('#auth-reg-password')?.value;
+      const confirm = this.root.querySelector('#auth-reg-confirm')?.value;
+      const errorEl = this.root.querySelector('#auth-reg-error');
+
+      if (!email || !password) {
+        if (errorEl) { errorEl.textContent = 'Please fill in all fields'; errorEl.style.display = 'block'; }
+        return;
+      }
+      if (password.length < 6) {
+        if (errorEl) { errorEl.textContent = 'Password must be at least 6 characters'; errorEl.style.display = 'block'; }
+        return;
+      }
+      if (password !== confirm) {
+        if (errorEl) { errorEl.textContent = 'Passwords do not match'; errorEl.style.display = 'block'; }
+        return;
+      }
+
+      const btn = this.root.querySelector('#auth-register-btn');
+      if (btn) btn.textContent = 'Creating account...';
+
+      try {
+        const response = await new Promise(resolve => {
+          chrome.runtime.sendMessage({ action: 'nexus-auth-signup', email, password }, resolve);
+        });
+
+        if (response?.ok) {
+          this._currentUser = response.user;
+          this.updateAuthUI(true);
+          this.updateApiDocsAuthUI(true);
+          this.showToast(`Account created! Welcome ${response.user.email}`);
+          if (errorEl) errorEl.style.display = 'none';
+          // Clear form
+          if (this.root.querySelector('#auth-reg-email')) this.root.querySelector('#auth-reg-email').value = '';
+          if (this.root.querySelector('#auth-reg-password')) this.root.querySelector('#auth-reg-password').value = '';
+          if (this.root.querySelector('#auth-reg-confirm')) this.root.querySelector('#auth-reg-confirm').value = '';
+        } else {
+          const msg = this.formatAuthError(response?.error || 'Registration failed');
+          if (errorEl) { errorEl.textContent = msg; errorEl.style.display = 'block'; }
+        }
+      } catch (e) {
+        if (errorEl) { errorEl.textContent = 'Registration failed'; errorEl.style.display = 'block'; }
+      }
+
+      if (btn) btn.textContent = 'Create Account';
+    }
+
+    async handleSignOut() {
+      try {
+        await new Promise(resolve => {
+          chrome.runtime.sendMessage({ action: 'nexus-auth-signout' }, resolve);
+        });
+        this._currentUser = null;
+        this._apiDocs = [];
+        this.updateAuthUI(false);
+        this.updateApiDocsAuthUI(false);
+        this.showToast('Signed out');
+      } catch (e) {
+        this.showToast('Sign out failed');
+      }
+    }
+
+    formatAuthError(raw) {
+      // Firebase REST errors come as e.g. "EMAIL_NOT_FOUND", "INVALID_PASSWORD"
+      const map = {
+        'EMAIL_NOT_FOUND': 'No account found with this email',
+        'INVALID_PASSWORD': 'Incorrect password',
+        'INVALID_LOGIN_CREDENTIALS': 'Invalid email or password',
+        'EMAIL_EXISTS': 'An account with this email already exists',
+        'WEAK_PASSWORD': 'Password must be at least 6 characters',
+        'INVALID_EMAIL': 'Invalid email address',
+        'TOO_MANY_ATTEMPTS_TRY_LATER': 'Too many attempts. Try again later',
+        'USER_DISABLED': 'This account has been disabled',
+      };
+      for (const [key, msg] of Object.entries(map)) {
+        if (raw.includes(key)) return msg;
+      }
+      return raw.length > 80 ? raw.slice(0, 80) + '...' : raw;
+    }
+
+    updateAuthUI(isLoggedIn) {
+      const loggedOut = this.root.querySelector('#auth-logged-out');
+      const loggedIn = this.root.querySelector('#auth-logged-in');
+      if (!loggedOut || !loggedIn) return;
+
+      if (isLoggedIn && this._currentUser) {
+        loggedOut.style.display = 'none';
+        loggedIn.style.display = 'block';
+        const emailEl = this.root.querySelector('#auth-user-email');
+        const uidEl = this.root.querySelector('#auth-user-uid');
+        const avatarEl = this.root.querySelector('#auth-avatar');
+        if (emailEl) emailEl.textContent = this._currentUser.email || 'Unknown';
+        if (uidEl) uidEl.textContent = `UID: ${this._currentUser.uid}`;
+        if (avatarEl) avatarEl.textContent = (this._currentUser.email || 'U')[0].toUpperCase();
+      } else {
+        loggedOut.style.display = 'block';
+        loggedIn.style.display = 'none';
+      }
+    }
+
+    updateApiDocsAuthUI(isLoggedIn) {
+      const authPrompt = this.root.querySelector('#api-docs-auth-prompt');
+      const content = this.root.querySelector('#api-docs-content');
+      const detail = this.root.querySelector('#api-docs-detail');
+
+      if (isLoggedIn) {
+        if (authPrompt) authPrompt.style.display = 'none';
+        if (content) content.style.display = 'block';
+        if (detail) detail.style.display = 'none';
+        this.loadApiDocs();
+      } else {
+        if (authPrompt) authPrompt.style.display = 'block';
+        if (content) content.style.display = 'none';
+        if (detail) detail.style.display = 'none';
+      }
+    }
+
+    async loadApiDocs() {
+      if (!this._currentUser) return;
+      const listEl = this.root.querySelector('#api-docs-list');
+      if (listEl) listEl.innerHTML = '<div style="text-align:center; padding:20px; color:hsl(var(--nx-muted-fg)); font-size:11px;">Loading...</div>';
+
+      try {
+        const response = await new Promise(resolve => {
+          chrome.runtime.sendMessage({ action: 'nexus-docs-list', userId: this._currentUser.uid }, resolve);
+        });
+
+        if (response?.ok && response.docs) {
+          this._apiDocs = response.docs;
+          this.renderApiDocsList(response.docs);
+        } else {
+          if (listEl) listEl.innerHTML = `<div class="nx-api-empty">Failed to load docs.<br><span style="font-size:9px; opacity:0.7;">${response?.error || 'Unknown error'}</span></div>`;
+        }
+      } catch (e) {
+        if (listEl) listEl.innerHTML = '<div class="nx-api-empty">Failed to load docs.<br><span style="font-size:9px; opacity:0.7;">Extension error</span></div>';
+      }
+    }
+
+    renderApiDocsList(docs) {
+      const listEl = this.root.querySelector('#api-docs-list');
+      if (!listEl) return;
+
+      if (!docs.length) {
+        listEl.innerHTML = '<div class="nx-api-empty">No API collections published yet.<br><span style="font-size:9px;">Publish docs from the Nexus Docs platform.</span></div>';
+        return;
+      }
+
+      listEl.innerHTML = docs.map(doc => `
+        <div class="nx-api-doc-card" data-doc-id="${doc.id}">
+          <div class="nx-api-doc-name">${this.escHtml(doc.name || 'Untitled')}</div>
+          ${doc.description ? `<div class="nx-api-doc-description">${this.escHtml(doc.description)}</div>` : ''}
+          <div class="nx-api-doc-stats">
+            <span class="nx-api-doc-stat"><span class="dot"></span> ${doc.endpointCount || 0} endpoints</span>
+            <span class="nx-api-doc-stat"><span class="dot"></span> ${doc.folderCount || 0} folders</span>
+            <span class="nx-api-doc-stat">${doc.visibility === 'public' ? '🌐 Public' : '🔒 Private'}</span>
+          </div>
+        </div>
+      `).join('');
+
+      // Click handlers
+      listEl.querySelectorAll('.nx-api-doc-card').forEach(card => {
+        card.addEventListener('click', () => this.openApiDoc(card.dataset.docId));
+      });
+    }
+
+    escHtml(str) {
+      return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
+    async openApiDoc(docId) {
+      const content = this.root.querySelector('#api-docs-content');
+      const detail = this.root.querySelector('#api-docs-detail');
+      const endpointsEl = this.root.querySelector('#api-docs-endpoints');
+
+      if (content) content.style.display = 'none';
+      if (detail) detail.style.display = 'block';
+      if (endpointsEl) endpointsEl.innerHTML = '<div style="text-align:center; padding:20px; color:hsl(var(--nx-muted-fg)); font-size:11px;">Loading collection...</div>';
+
+      // Set header from cached meta
+      const meta = this._apiDocs.find(d => d.id === docId);
+      if (meta) {
+        const titleEl = this.root.querySelector('#api-doc-title');
+        const descEl = this.root.querySelector('#api-doc-desc');
+        const metaEl = this.root.querySelector('#api-doc-meta');
+        if (titleEl) titleEl.textContent = meta.name || 'Untitled';
+        if (descEl) descEl.textContent = meta.description || '';
+        if (metaEl) metaEl.innerHTML = `
+          <span class="nx-badge outline" style="font-size:9px;">${meta.endpointCount || 0} endpoints</span>
+          <span class="nx-badge outline" style="font-size:9px;">${meta.folderCount || 0} folders</span>
+          <span class="nx-badge outline" style="font-size:9px;">${meta.visibility === 'public' ? '🌐 Public' : '🔒 Private'}</span>
+        `;
+      }
+
+      try {
+        const response = await new Promise(resolve => {
+          chrome.runtime.sendMessage({ action: 'nexus-docs-get', docId }, resolve);
+        });
+
+        if (response?.ok && response.doc?.collectionJson) {
+          const collection = JSON.parse(response.doc.collectionJson);
+          this.renderApiEndpoints(collection);
+        } else {
+          if (endpointsEl) endpointsEl.innerHTML = `<div class="nx-api-empty">Failed to load.<br><span style="font-size:9px; opacity:0.7;">${response?.error || 'No data'}</span></div>`;
+        }
+      } catch (e) {
+        if (endpointsEl) endpointsEl.innerHTML = '<div class="nx-api-empty">Failed to parse collection.</div>';
+      }
+    }
+
+    renderApiEndpoints(collection) {
+      const endpointsEl = this.root.querySelector('#api-docs-endpoints');
+      if (!endpointsEl) return;
+
+      // Postman collection format: { info, item: [...] }
+      // item can be folders (with nested item array) or requests
+      const html = [];
+
+      const processItems = (items, depth = 0) => {
+        if (!Array.isArray(items)) return;
+        for (const item of items) {
+          if (item.item && Array.isArray(item.item)) {
+            // Folder
+            html.push(`<div class="nx-folder-header" style="padding-left:${depth * 8}px;">📁 ${this.escHtml(item.name || 'Folder')}</div>`);
+            processItems(item.item, depth + 1);
+          } else if (item.request) {
+            // Request
+            const method = (item.request.method || 'GET').toUpperCase();
+            const url = typeof item.request.url === 'string'
+              ? item.request.url
+              : (item.request.url?.raw || item.request.url?.path?.join('/') || '');
+            const methodClass = method.toLowerCase();
+            html.push(`
+              <div class="nx-endpoint-item" style="padding-left:${depth * 8 + 5}px;" data-method="${method}" data-url="${this.escHtml(url)}" data-name="${this.escHtml(item.name || '')}">
+                <span class="nx-method-badge ${methodClass}">${method}</span>
+                <span class="nx-endpoint-path" title="${this.escHtml(url)}">${this.escHtml(item.name || url)}</span>
+              </div>
+            `);
+          }
+        }
+      };
+
+      processItems(collection.item);
+
+      if (html.length === 0) {
+        endpointsEl.innerHTML = '<div class="nx-api-empty">No endpoints found in this collection.</div>';
+        return;
+      }
+
+      endpointsEl.innerHTML = html.join('');
+
+      // Click to copy endpoint info to context
+      endpointsEl.querySelectorAll('.nx-endpoint-item').forEach(el => {
+        el.addEventListener('click', () => {
+          const method = el.dataset.method;
+          const url = el.dataset.url;
+          const name = el.dataset.name;
+          const text = `${method} ${url}${name ? ` (${name})` : ''}`;
+          navigator.clipboard.writeText(text);
+          this.showToast(`Copied: ${method} ${name || url}`);
+        });
+      });
+    }
+
+    showApiDocsList() {
+      const content = this.root.querySelector('#api-docs-content');
+      const detail = this.root.querySelector('#api-docs-detail');
+      if (content) content.style.display = 'block';
+      if (detail) detail.style.display = 'none';
     }
 
     async saveSettings() {
