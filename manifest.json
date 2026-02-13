@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "Nexus Helper",
   "version": "3.3.0",
-  "description": "AI-powered context capture for Cursor, VS Code, Windsurf & Zed — routes, screenshots, debug info, smart prompts, API docs integration, and rich contextual awareness.",
+  "description": "AI context capture for code editors. Routes, screenshots, errors, API docs & smart prompts from a floating widget.",
   "permissions": [
     "activeTab",
     "clipboardWrite",
