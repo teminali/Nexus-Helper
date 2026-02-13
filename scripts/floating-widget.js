@@ -300,6 +300,38 @@
       } catch (e) {
         return null;
       }
+    },
+
+    // Project ↔ API Docs pinning
+    async getProjectApiDocs(projectPath) {
+      if (!projectPath) return [];
+      const result = await chrome.storage.local.get(['projectApiDocs']);
+      const map = result.projectApiDocs || {};
+      return map[projectPath] || [];
+    },
+
+    async pinApiDocToProject(projectPath, docId) {
+      if (!projectPath || !docId) return;
+      const docs = await this.getProjectApiDocs(projectPath);
+      if (!docs.includes(docId)) {
+        docs.push(docId);
+        const result = await chrome.storage.local.get(['projectApiDocs']);
+        const map = result.projectApiDocs || {};
+        map[projectPath] = docs;
+        await chrome.storage.local.set({ projectApiDocs: map });
+      }
+      return docs;
+    },
+
+    async unpinApiDocFromProject(projectPath, docId) {
+      if (!projectPath || !docId) return;
+      const docs = await this.getProjectApiDocs(projectPath);
+      const filtered = docs.filter(id => id !== docId);
+      const result = await chrome.storage.local.get(['projectApiDocs']);
+      const map = result.projectApiDocs || {};
+      map[projectPath] = filtered;
+      await chrome.storage.local.set({ projectApiDocs: map });
+      return filtered;
     }
   };
 
