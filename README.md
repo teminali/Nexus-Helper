@@ -172,11 +172,11 @@ Real-time estimated token count of the generated context, with visual warnings:
 ```
 Nexus-Helper/
 ├── manifest.json                  # Chrome Extension manifest (MV3)
-├── icons/                         # Extension icons (SVG)
-│   ├── icon16.svg
-│   ├── icon32.svg
-│   ├── icon48.svg
-│   └── icon128.svg
+├── icons/                         # Extension icons (PNG + SVG source)
+│   ├── icon16.png
+│   ├── icon32.png
+│   ├── icon48.png
+│   └── icon128.png
 ├── popup/                         # Extension popup UI
 │   ├── popup.html
 │   ├── popup.css
