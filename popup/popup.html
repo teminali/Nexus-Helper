@@ -1,0 +1,715 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Nexus Helper</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="popup.css" />
+</head>
+<body>
+  <div class="app">
+    <!-- Header -->
+    <header class="header">
+      <div class="header-brand">
+        <div class="logo">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
+            <polyline points="2 17 12 22 22 17"></polyline>
+            <polyline points="2 12 12 17 22 12"></polyline>
+          </svg>
+        </div>
+        <div class="header-text">
+          <h1 class="title">Nexus Helper</h1>
+          <p class="subtitle">Cursor & Antigravity Companion</p>
+        </div>
+      </div>
+      <div class="theme-toggle">
+        <button class="icon-btn" id="theme-toggle" title="Toggle theme">
+          <!-- Sun icon for dark mode (click to switch to light) -->
+          <svg class="sun-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="5"></circle>
+            <line x1="12" y1="1" x2="12" y2="3"></line>
+            <line x1="12" y1="21" x2="12" y2="23"></line>
+            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+            <line x1="1" y1="12" x2="3" y2="12"></line>
+            <line x1="21" y1="12" x2="23" y2="12"></line>
+            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+          </svg>
+          <!-- Moon icon for light mode (click to switch to dark) -->
+          <svg class="moon-icon hidden" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+          </svg>
+        </button>
+        <button class="icon-btn" id="settings-toggle" title="Settings (S)">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="3"></circle>
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+          </svg>
+        </button>
+      </div>
+    </header>
+
+    <!-- Search Bar -->
+    <div class="search-bar">
+      <div class="search-input-wrapper">
+        <svg class="search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="11" cy="11" r="8"></circle>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+        </svg>
+        <input type="text" class="search-input" id="search-input" placeholder="Search routes, history, projects..." />
+      </div>
+      <div class="shortcut-hint">
+        <kbd>/</kbd>
+      </div>
+    </div>
+
+    <!-- Settings Panel -->
+    <div class="settings-panel" id="settings-panel" hidden>
+      <div class="settings-header">
+        <h3>Environment URLs</h3>
+        <p>Configure base URLs for quick navigation between environments</p>
+      </div>
+      <div class="settings-form">
+        <div class="form-group">
+          <label class="form-label" for="env-local">Local Development</label>
+          <input type="url" class="form-input" id="env-local" placeholder="http://localhost:3000" />
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="env-staging">Staging</label>
+          <input type="url" class="form-input" id="env-staging" placeholder="https://staging.example.com" />
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="env-prod">Production</label>
+          <input type="url" class="form-input" id="env-prod" placeholder="https://example.com" />
+        </div>
+        <button class="btn btn-default btn-sm" id="save-envs">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="20 6 9 17 4 12"></polyline>
+          </svg>
+          Save Settings
+        </button>
+      </div>
+    </div>
+
+    <!-- Current Page Info -->
+    <div class="current-page">
+      <div class="page-info">
+        <div class="page-title" id="current-title">Loading...</div>
+        <div class="page-route" id="current-route">/</div>
+      </div>
+      <button class="icon-btn pin-btn" id="pin-current" title="Pin this route (P)">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="12" y1="17" x2="12" y2="22"></line>
+          <path d="M5 17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V6h1a2 2 0 0 0 0-4H8a2 2 0 0 0 0 4h1v4.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V17z"></path>
+        </svg>
+      </button>
+    </div>
+
+    <!-- Navigation Tabs -->
+    <nav class="tabs">
+      <button class="tab active" data-tab="capture" data-index="0" title="Capture (1)">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+          <circle cx="8.5" cy="8.5" r="1.5"></circle>
+          <polyline points="21 15 16 10 5 21"></polyline>
+        </svg>
+        Capture
+      </button>
+      <button class="tab" data-tab="navigate" data-index="1" title="Navigation (2)">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polygon points="3 11 22 2 13 21 11 13 3 11"></polygon>
+        </svg>
+        Navigate
+      </button>
+      <button class="tab" data-tab="debug" data-index="2" title="Network (3)">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="4 17 10 11 4 5"></polyline>
+          <line x1="12" y1="19" x2="20" y2="19"></line>
+        </svg>
+        Network
+      </button>
+      <button class="tab" data-tab="network" data-index="3" title="Network Monitor (4)">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <ellipse cx="12" cy="5" rx="9" ry="3"></ellipse>
+          <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"></path>
+          <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"></path>
+        </svg>
+        Network
+      </button>
+      <button class="tab" data-tab="cursor" data-index="4" title="Cursor AI (5)">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"></circle>
+          <circle cx="12" cy="12" r="6"></circle>
+          <circle cx="12" cy="12" r="2"></circle>
+        </svg>
+        Cursor
+      </button>
+      <button class="tab" data-tab="projects" data-index="5" title="Projects (6)">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+        </svg>
+        Projects
+      </button>
+    </nav>
+
+    <!-- Tab Content -->
+    <main class="tab-content">
+      <!-- Capture Tab -->
+      <section class="panel active" id="panel-capture">
+        <div class="panel-header">
+          <h2>Quick Capture</h2>
+          <p>One-click context copying for your workflow</p>
+        </div>
+
+        <div class="hero-card">
+          <div class="hero-info">
+            <div class="hero-label">Current Page</div>
+            <div class="hero-title" id="hero-title">Loading...</div>
+            <div class="hero-route" id="hero-route">/</div>
+          </div>
+          <div class="hero-actions">
+            <button class="hero-action-btn" data-action="copy-route">
+              <span class="hero-icon">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
+                  <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
+                </svg>
+              </span>
+              <span class="hero-text">Copy Route</span>
+            </button>
+            <button class="hero-action-btn" data-action="copy-url">
+              <span class="hero-icon">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
+                  <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
+                </svg>
+              </span>
+              <span class="hero-text">Copy URL</span>
+            </button>
+            <button class="hero-action-btn" data-action="copy-screenshot">
+              <span class="hero-icon">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                  <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                  <polyline points="21 15 16 10 5 21"></polyline>
+                </svg>
+              </span>
+              <span class="hero-text">Screenshot</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="action-grid">
+          <button class="action-btn" data-action="copy-route">
+            <span class="action-icon route">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
+                <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
+              </svg>
+            </span>
+            <span class="action-label">Copy Route</span>
+            <span class="action-hint">Path only</span>
+          </button>
+
+          <button class="action-btn" data-action="copy-url">
+            <span class="action-icon url">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
+                <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
+              </svg>
+            </span>
+            <span class="action-label">Copy Full URL</span>
+            <span class="action-hint">With params</span>
+          </button>
+
+          <button class="action-btn" data-action="copy-title">
+            <span class="action-icon title">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                <polyline points="14 2 14 8 20 8"></polyline>
+                <line x1="16" y1="13" x2="8" y2="13"></line>
+                <line x1="16" y1="17" x2="8" y2="17"></line>
+                <polyline points="10 9 9 9 8 9"></polyline>
+              </svg>
+            </span>
+            <span class="action-label">Copy Title</span>
+            <span class="action-hint">Page title</span>
+          </button>
+
+          <button class="action-btn" data-action="copy-selection">
+            <span class="action-icon selection">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path>
+                <rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect>
+              </svg>
+            </span>
+            <span class="action-label">Copy Selection</span>
+            <span class="action-hint">Selected text</span>
+          </button>
+
+          <button class="action-btn" data-action="copy-screenshot">
+            <span class="action-icon screenshot">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                <polyline points="21 15 16 10 5 21"></polyline>
+              </svg>
+            </span>
+            <span class="action-label">Screenshot</span>
+            <span class="action-hint">To clipboard</span>
+          </button>
+
+          <button class="action-btn" data-action="copy-bundle">
+            <span class="action-icon bundle">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+                <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
+                <line x1="12" y1="22.08" x2="12" y2="12"></line>
+              </svg>
+            </span>
+            <span class="action-label">Route + Shot</span>
+            <span class="action-hint">Bundle copy</span>
+          </button>
+        </div>
+
+        <!-- Clipboard History -->
+        <div class="section-header">
+          <h3>Clipboard History</h3>
+          <button class="text-btn" id="clear-history">Clear All</button>
+        </div>
+        <div class="list-container" id="clipboard-history">
+          <div class="empty-state">
+            <div class="empty-state-icon">📋</div>
+            <div class="empty-state-text">No items yet. Start copying!</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Navigate Tab -->
+      <section class="panel" id="panel-navigate">
+        <div class="panel-header">
+          <h2>Quick Navigation</h2>
+          <p>Jump between environments instantly</p>
+        </div>
+
+        <div class="env-section">
+          <h3>Open Current Route In</h3>
+          <div class="env-buttons">
+            <button class="env-btn" data-env="local">
+              <span class="env-dot local"></span>
+              <span>Local</span>
+            </button>
+            <button class="env-btn" data-env="staging">
+              <span class="env-dot staging"></span>
+              <span>Staging</span>
+            </button>
+            <button class="env-btn" data-env="prod">
+              <span class="env-dot prod"></span>
+              <span>Production</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="section-header">
+          <h3>Pinned Routes</h3>
+        </div>
+        <div class="list-container" id="pinned-routes">
+          <div class="empty-state">
+            <div class="empty-state-icon">📌</div>
+            <div class="empty-state-text">Pin routes for quick access</div>
+          </div>
+        </div>
+
+        <div class="section-header">
+          <h3>Recent Routes</h3>
+          <button class="text-btn" id="clear-recent">Clear</button>
+        </div>
+        <div class="list-container" id="recent-routes">
+          <div class="empty-state">
+            <div class="empty-state-icon">🕐</div>
+            <div class="empty-state-text">No recent routes</div>
+          </div>
+        </div>
+
+        <div class="notes-section">
+          <h3>Notes for Current Route</h3>
+          <textarea class="form-textarea" id="route-note" placeholder="Add a quick note about this route... Jot down ideas, bugs, or context for later."></textarea>
+          <button class="btn btn-secondary btn-sm" id="save-note" style="margin-top: 0.75rem;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+              <polyline points="17 21 17 13 7 13 7 21"></polyline>
+              <polyline points="7 3 7 8 15 8"></polyline>
+            </svg>
+            Save Note
+          </button>
+        </div>
+      </section>
+
+      <!-- Debug Tab -->
+      <section class="panel" id="panel-debug">
+        <div class="panel-header">
+          <h2>Debug Essentials</h2>
+          <p>Console, network & performance insights</p>
+        </div>
+
+        <div class="debug-actions">
+          <button class="debug-btn" data-action="copy-errors">
+            <div class="debug-icon" style="color: hsl(var(--destructive)); background: hsl(var(--destructive) / 0.1);">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="12" y1="8" x2="12" y2="12"></line>
+                <line x1="12" y1="16" x2="12.01" y2="16"></line>
+              </svg>
+            </div>
+            <div class="debug-info">
+              <span class="debug-label">Copy Last Errors</span>
+              <span class="debug-count" id="error-count">No errors captured</span>
+            </div>
+          </button>
+
+          <button class="debug-btn" data-action="copy-network">
+            <div class="debug-icon" style="color: hsl(var(--primary)); background: hsl(var(--primary) / 0.1);">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <ellipse cx="12" cy="5" rx="9" ry="3"></ellipse>
+                <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"></path>
+                <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"></path>
+              </svg>
+            </div>
+            <div class="debug-info">
+              <span class="debug-label">Copy Network Endpoints</span>
+              <span class="debug-count" id="network-count">No requests captured</span>
+            </div>
+          </button>
+
+          <button class="debug-btn" data-action="copy-performance">
+            <div class="debug-icon" style="color: hsl(var(--success)); background: hsl(var(--success) / 0.1);">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+              </svg>
+            </div>
+            <div class="debug-info">
+              <span class="debug-label">Copy Performance Snapshot</span>
+              <span class="debug-count">Load time, LCP, FCP metrics</span>
+            </div>
+          </button>
+
+          <button class="debug-btn" data-action="copy-full-debug">
+            <div class="debug-icon" style="color: hsl(var(--info)); background: hsl(var(--info) / 0.1);">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                <polyline points="14 2 14 8 20 8"></polyline>
+                <line x1="16" y1="13" x2="8" y2="13"></line>
+                <line x1="16" y1="17" x2="8" y2="17"></line>
+                <polyline points="10 9 9 9 8 9"></polyline>
+              </svg>
+            </div>
+            <div class="debug-info">
+              <span class="debug-label">Copy Full Debug Report</span>
+              <span class="debug-count">Everything combined</span>
+            </div>
+          </button>
+        </div>
+
+        <button class="btn btn-outline btn-sm btn-full" id="clear-debug">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="3 6 5 6 21 6"></polyline>
+            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+          </svg>
+          Clear Debug Data
+        </button>
+      </section>
+
+      <!-- Network Tab -->
+      <section class="panel" id="panel-network">
+        <div class="panel-header">
+          <h2>Network Monitor</h2>
+          <p>Inspect and copy API requests in real-time</p>
+        </div>
+
+        <div class="network-filters">
+          <button class="filter-btn active" data-filter="all">All</button>
+          <button class="filter-btn" data-filter="failed">Failed</button>
+          <button class="filter-btn" data-filter="xhr">XHR/Fetch</button>
+        </div>
+
+        <div id="network-list">
+          <div class="empty-state">
+            <div class="empty-state-icon">🌐</div>
+            <div class="empty-state-text">No requests captured yet</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Cursor Tab -->
+      <section class="panel" id="panel-cursor">
+        <div class="panel-header">
+          <h2>Cursor AI Context</h2>
+          <p>AI-optimized context generation for Cursor</p>
+        </div>
+
+        <div class="cursor-options">
+          <div class="form-group">
+            <label class="form-label" for="cursor-prompt">Prompt (optional)</label>
+            <textarea class="form-textarea" id="cursor-prompt" rows="3" placeholder="Describe what you want the AI to help with... e.g., 'Fix the bug in the header navigation'"></textarea>
+          </div>
+          <label class="checkbox-label">
+            <input type="checkbox" id="include-filepath" checked />
+            <span>Include guessed file path based on route</span>
+          </label>
+        </div>
+
+        <div class="cursor-actions">
+          <button class="cursor-btn primary" data-action="copy-cursor-context">
+            <div class="cursor-btn-icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 2L2 7l10 5 10-5-10-5z"></path>
+                <path d="M2 17l10 5 10-5"></path>
+                <path d="M2 12l10 5 10-5"></path>
+              </svg>
+            </div>
+            <div class="cursor-btn-text">
+              <span class="cursor-btn-label">Context</span>
+              <span class="cursor-btn-desc">URL + title + selection + screenshot</span>
+            </div>
+          </button>
+
+          <button class="cursor-btn" data-action="copy-cursor-bug">
+            <div class="cursor-btn-icon bug">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="8" y="6" width="8" height="14" rx="4"></rect>
+                <path d="M12 2v4"></path>
+                <path d="M8 10H4a2 2 0 0 0-2 2v2a2 2 0 0 0 2 2h4"></path>
+                <path d="M16 10h4a2 2 0 0 1 2 2v2a2 2 0 0 1-2 2h-4"></path>
+              </svg>
+            </div>
+            <div class="cursor-btn-text">
+              <span class="cursor-btn-label">Report</span>
+              <span class="cursor-btn-desc">Pre-formatted bug context</span>
+            </div>
+          </button>
+
+          <button class="cursor-btn" data-action="copy-cursor-feature">
+            <div class="cursor-btn-icon feature">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+              </svg>
+            </div>
+            <div class="cursor-btn-text">
+              <span class="cursor-btn-label">Feature Note</span>
+              <span class="cursor-btn-desc">For new features/tasks</span>
+            </div>
+          </button>
+
+          <button class="cursor-btn" data-action="copy-cursor-summary">
+            <div class="cursor-btn-icon summary">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="8" y1="6" x2="21" y2="6"></line>
+                <line x1="8" y1="12" x2="21" y2="12"></line>
+                <line x1="8" y1="18" x2="21" y2="18"></line>
+                <line x1="3" y1="6" x2="3.01" y2="6"></line>
+                <line x1="3" y1="12" x2="3.01" y2="12"></line>
+                <line x1="3" y1="18" x2="3.01" y2="18"></line>
+              </svg>
+            </div>
+            <div class="cursor-btn-text">
+              <span class="cursor-btn-label">Page Summary</span>
+              <span class="cursor-btn-desc">Quick context overview</span>
+            </div>
+          </button>
+        </div>
+
+        <div class="preview-section">
+          <div class="section-header">
+            <h3>Preview</h3>
+            <span class="preview-badge" id="preview-type">Context</span>
+          </div>
+          <div class="preview-box" id="preview-content">Click any button above to generate AI context preview...</div>
+        </div>
+      </section>
+
+      <!-- Projects Tab -->
+      <section class="panel" id="panel-projects">
+        <div class="panel-header">
+          <h2>Project Mappings</h2>
+          <p>Link URLs to local folders for quick access</p>
+        </div>
+
+        <div class="project-current">
+          <h3>Current Page</h3>
+          <div class="project-match" id="current-project-match">
+            <div class="project-match-status">
+              <span class="project-match-dot"></span>
+              <span class="project-match-text">No project mapped</span>
+            </div>
+          </div>
+          <div class="project-form" id="project-form">
+            <div class="form-group">
+              <label class="form-label">URL Pattern</label>
+              <input type="text" class="form-input" id="project-key" placeholder="example.com or example.com/app" />
+              <p class="input-hint">Domain or domain/path prefix</p>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Project Name</label>
+              <input type="text" class="form-input" id="project-name" placeholder="My React App" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Local Folder Path</label>
+              <div class="path-input">
+                <input type="text" class="form-input" id="project-path" placeholder="/Users/name/projects/my-app" />
+                <button class="icon-btn" id="pick-folder" title="Select folder">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+                  </svg>
+                </button>
+              </div>
+              <p class="input-hint">Absolute path to project root</p>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Preferred Editor</label>
+              <div class="radio-group">
+                <label class="radio-label">
+                  <input type="radio" name="editor" value="cursor" checked />
+                  <span>Cursor</span>
+                </label>
+                <label class="radio-label">
+                  <input type="radio" name="editor" value="vscode" />
+                  <span>VS Code</span>
+                </label>
+                <label class="radio-label">
+                  <input type="radio" name="editor" value="antigravity" />
+                  <span>Antigravity</span>
+                </label>
+              </div>
+            </div>
+            <div class="project-form-actions">
+              <button class="btn btn-default" id="save-project">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="20 6 9 17 4 12"></polyline>
+                </svg>
+                Map Project
+              </button>
+              <button class="btn btn-outline" id="open-project-folder">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M5 17H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2h-1"></path>
+                  <polygon points="12 15 17 21 7 21 12 15"></polygon>
+                </svg>
+                Open Folder
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="projects-list-section">
+          <div class="section-header">
+            <h3>Mapped Projects</h3>
+          </div>
+          <div class="projects-list" id="projects-list">
+            <div class="empty-state">
+              <div class="empty-state-icon">📂</div>
+              <div class="empty-state-text">No projects mapped yet</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="widget-settings">
+          <div class="section-header">
+            <h3>Floating Widget</h3>
+          </div>
+          <div class="widget-options">
+            <label class="checkbox-label">
+              <input type="checkbox" id="widget-auto-show" checked />
+              <span>Auto-show widget on page load</span>
+            </label>
+            <div class="widget-shortcut">
+              <span>Press</span>
+              <kbd>Alt</kbd>
+              <span>+</span>
+              <kbd>N</kbd>
+              <span>to toggle widget</span>
+            </div>
+            <button class="btn btn-outline btn-sm" id="toggle-widget-btn" style="margin-top: 0.5rem;">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="4" y="4" width="16" height="16" rx="2" ry="2"></rect>
+                <rect x="9" y="9" width="6" height="6"></rect>
+                <line x1="9" y1="1" x2="9" y2="4"></line>
+                <line x1="15" y1="1" x2="15" y2="4"></line>
+                <line x1="9" y1="20" x2="9" y2="23"></line>
+                <line x1="15" y1="20" x2="15" y2="23"></line>
+                <line x1="20" y1="9" x2="23" y2="9"></line>
+                <line x1="20" y1="14" x2="23" y2="14"></line>
+                <line x1="1" y1="9" x2="4" y2="9"></line>
+                <line x1="1" y1="14" x2="4" y2="14"></line>
+              </svg>
+              Toggle Widget on Current Page
+            </button>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- Toast Container -->
+    <div class="toast-container" id="toast-container">
+      <div class="toast" id="toast" hidden>
+        <div class="toast-icon">✓</div>
+        <div class="toast-message">Copied to clipboard!</div>
+      </div>
+    </div>
+
+    <!-- Keyboard Shortcuts Modal -->
+    <div class="keyboard-shortcuts" id="keyboard-shortcuts">
+      <div class="shortcuts-panel">
+        <h2>Keyboard Shortcuts</h2>
+        <div class="shortcut-row">
+          <span class="shortcut-desc">Focus search</span>
+          <div class="shortcut-keys"><kbd>/</kbd></div>
+        </div>
+        <div class="shortcut-row">
+          <span class="shortcut-desc">Toggle settings</span>
+          <div class="shortcut-keys"><kbd>S</kbd></div>
+        </div>
+        <div class="shortcut-row">
+          <span class="shortcut-desc">Pin/unpin route</span>
+          <div class="shortcut-keys"><kbd>P</kbd></div>
+        </div>
+        <div class="shortcut-row">
+          <span class="shortcut-desc">Navigate tabs</span>
+          <div class="shortcut-keys"><kbd>1</kbd><span>-</span><kbd>6</kbd></div>
+        </div>
+        <div class="shortcut-row">
+          <span class="shortcut-desc">Next/Previous tab</span>
+          <div class="shortcut-keys"><kbd>→</kbd><kbd>←</kbd></div>
+        </div>
+        <div class="shortcut-row">
+          <span class="shortcut-desc">Toggle theme</span>
+          <div class="shortcut-keys"><kbd>T</kbd></div>
+        </div>
+        <div class="shortcut-row">
+          <span class="shortcut-desc">Close shortcuts</span>
+          <div class="shortcut-keys"><kbd>Esc</kbd></div>
+        </div>
+        <div style="text-align: center; margin-top: 1.5rem;">
+          <button class="btn btn-default" onclick="document.getElementById('keyboard-shortcuts').classList.remove('active')">
+            Got it
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+      <span>Press</span>
+      <kbd>?</kbd>
+      <span>for shortcuts</span>
+      <span class="footer-version">v3.0</span>
+    </footer>
+  </div>
+
+  <script src="../scripts/storage.js"></script>
+  <script src="popup.js"></script>
+</body>
+</html>
