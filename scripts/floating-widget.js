@@ -5564,7 +5564,7 @@
 
         if (response?.ok && response.docs) {
           this._apiDocs = response.docs;
-          this.renderApiDocsList(response.docs);
+          await this.renderApiDocsList(response.docs);
         } else {
           if (listEl) listEl.innerHTML = `<div class="nx-api-empty">Failed to load docs.<br><span style="font-size:9px; opacity:0.7;">${response?.error || 'Unknown error'}</span></div>`;
         }
@@ -5628,7 +5628,7 @@
             await Storage.pinApiDocToProject(projectPath, docId);
           }
           // Re-render to update state
-          this.renderApiDocsList(this._apiDocs);
+          await this.renderApiDocsList(this._apiDocs);
         });
       });
       listEl.querySelectorAll('.nx-api-doc-card').forEach(card => {
