@@ -1171,6 +1171,57 @@
       border-radius: 50%;
       background: hsl(var(--nx-primary));
     }
+    .nx-api-doc-card-header {
+      display: flex;
+      align-items: flex-start;
+      gap: 6px;
+    }
+    .nx-api-doc-card-body {
+      flex: 1;
+      min-width: 0;
+    }
+    .nx-api-pin-btn {
+      flex-shrink: 0;
+      background: none;
+      border: 1px solid hsl(var(--nx-border));
+      border-radius: 5px;
+      color: hsl(var(--nx-muted-fg));
+      cursor: pointer;
+      padding: 3px 5px;
+      font-size: 9px;
+      display: flex;
+      align-items: center;
+      gap: 3px;
+      transition: all 0.15s;
+      white-space: nowrap;
+    }
+    .nx-api-pin-btn:hover {
+      border-color: hsl(var(--nx-primary) / 0.5);
+      color: hsl(var(--nx-primary));
+      background: hsl(var(--nx-primary) / 0.08);
+    }
+    .nx-api-pin-btn.pinned {
+      border-color: hsl(var(--nx-primary) / 0.4);
+      color: hsl(var(--nx-primary));
+      background: hsl(var(--nx-primary) / 0.12);
+    }
+    .nx-api-pin-btn svg {
+      width: 10px;
+      height: 10px;
+    }
+    .nx-project-docs-hint {
+      font-size: 9px;
+      color: hsl(var(--nx-muted-fg));
+      text-align: center;
+      padding: 6px 8px;
+      background: hsl(var(--nx-secondary) / 0.3);
+      border-radius: 6px;
+      margin-bottom: 6px;
+      line-height: 1.4;
+    }
+    .nx-project-docs-hint strong {
+      color: hsl(var(--nx-fg));
+    }
     .nx-api-endpoints-list {
       display: flex;
       flex-direction: column;
@@ -5522,7 +5573,7 @@
       }
     }
 
-    renderApiDocsList(docs) {
+    async renderApiDocsList(docs) {
       const listEl = this.root.querySelector('#api-docs-list');
       if (!listEl) return;
 
@@ -5531,19 +5582,55 @@
         return;
       }
 
-      listEl.innerHTML = docs.map(doc => `
-        <div class="nx-api-doc-card" data-doc-id="${doc.id}">
-          <div class="nx-api-doc-name">${this.escHtml(doc.name || 'Untitled')}</div>
-          ${doc.description ? `<div class="nx-api-doc-description">${this.escHtml(doc.description)}</div>` : ''}
-          <div class="nx-api-doc-stats">
-            <span class="nx-api-doc-stat"><span class="dot"></span> ${doc.endpointCount || 0} endpoints</span>
-            <span class="nx-api-doc-stat"><span class="dot"></span> ${doc.folderCount || 0} folders</span>
-            <span class="nx-api-doc-stat">${doc.visibility === 'public' ? '🌐 Public' : '🔒 Private'}</span>
-          </div>
-        </div>
-      `).join('');
+      const projectPath = await this.getProjectPath();
+      const pinnedIds = projectPath ? await Storage.getProjectApiDocs(projectPath) : [];
+      const projectName = projectPath ? projectPath.split('/').pop() : '';
 
-      // Click handlers
+      let html = '';
+      if (projectPath) {
+        const pinnedCount = pinnedIds.length;
+        html += `<div class="nx-project-docs-hint">Project: <strong>${this.escHtml(projectName)}</strong> — ${pinnedCount ? pinnedCount + ' API doc' + (pinnedCount > 1 ? 's' : '') + ' pinned' : 'pin docs to link them to this project'}</div>`;
+      }
+
+      html += docs.map(doc => {
+        const isPinned = pinnedIds.includes(doc.id);
+        return `
+        <div class="nx-api-doc-card" data-doc-id="${doc.id}">
+          <div class="nx-api-doc-card-header">
+            <div class="nx-api-doc-card-body">
+              <div class="nx-api-doc-name">${this.escHtml(doc.name || 'Untitled')}</div>
+              ${doc.description ? `<div class="nx-api-doc-description">${this.escHtml(doc.description)}</div>` : ''}
+              <div class="nx-api-doc-stats">
+                <span class="nx-api-doc-stat"><span class="dot"></span> ${doc.endpointCount || 0} endpoints</span>
+                <span class="nx-api-doc-stat"><span class="dot"></span> ${doc.folderCount || 0} folders</span>
+                <span class="nx-api-doc-stat">${doc.visibility === 'public' ? '🌐 Public' : '🔒 Private'}</span>
+              </div>
+            </div>
+            ${projectPath ? `<button class="nx-api-pin-btn ${isPinned ? 'pinned' : ''}" data-doc-id="${doc.id}" title="${isPinned ? 'Unpin from project' : 'Pin to project'}">
+              <svg viewBox="0 0 24 24" fill="${isPinned ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="2"><path d="M12 2C9.24 2 7 4.24 7 7c0 1.38.56 2.63 1.46 3.54L12 22l3.54-11.46A4.98 4.98 0 0 0 17 7c0-2.76-2.24-5-5-5z"/></svg>
+              ${isPinned ? 'Pinned' : 'Pin'}
+            </button>` : ''}
+          </div>
+        </div>`;
+      }).join('');
+
+      listEl.innerHTML = html;
+
+      // Click handlers — pin button vs card
+      listEl.querySelectorAll('.nx-api-pin-btn').forEach(btn => {
+        btn.addEventListener('click', async (e) => {
+          e.stopPropagation();
+          const docId = btn.dataset.docId;
+          const isPinned = btn.classList.contains('pinned');
+          if (isPinned) {
+            await Storage.unpinApiDocFromProject(projectPath, docId);
+          } else {
+            await Storage.pinApiDocToProject(projectPath, docId);
+          }
+          // Re-render to update state
+          this.renderApiDocsList(this._apiDocs);
+        });
+      });
       listEl.querySelectorAll('.nx-api-doc-card').forEach(card => {
         card.addEventListener('click', () => this.openApiDoc(card.dataset.docId));
       });
@@ -5675,6 +5762,17 @@
       }
     }
 
+    // Returns the docs relevant to the current project (pinned), or all docs if none pinned
+    async _getProjectFilteredDocs(allDocs) {
+      if (!allDocs || !allDocs.length) return { docs: allDocs || [], projectPath: null, pinnedIds: [], isFiltered: false };
+      const projectPath = await this.getProjectPath();
+      if (!projectPath) return { docs: allDocs, projectPath: null, pinnedIds: [], isFiltered: false };
+      const pinnedIds = await Storage.getProjectApiDocs(projectPath);
+      if (!pinnedIds.length) return { docs: allDocs, projectPath, pinnedIds: [], isFiltered: false };
+      const filtered = allDocs.filter(d => pinnedIds.includes(d.id));
+      return { docs: filtered, projectPath, pinnedIds, isFiltered: true };
+    }
+
     async loadApiAttachPanel() {
       const body = this.root.querySelector('#api-attach-body');
       if (!body) return;
@@ -5686,7 +5784,8 @@
 
       // If we already have cached docs list, render immediately
       if (this._apiDocs && this._apiDocs.length) {
-        this.renderApiAttachDocs(this._apiDocs);
+        const { docs } = await this._getProjectFilteredDocs(this._apiDocs);
+        this.renderApiAttachDocs(docs);
         return;
       }
 
@@ -5698,7 +5797,8 @@
         });
         if (response?.ok && response.docs) {
           this._apiDocs = response.docs;
-          this.renderApiAttachDocs(response.docs);
+          const { docs } = await this._getProjectFilteredDocs(response.docs);
+          this.renderApiAttachDocs(docs);
         } else {
           body.innerHTML = '<div class="nx-api-attach-empty">Failed to load docs</div>';
         }
@@ -5975,13 +6075,14 @@
       this.renderAttachedChips();
     }
 
-    removeApiAttach(index) {
+    async removeApiAttach(index) {
       this._attachedApiItems.splice(index, 1);
       this.renderAttachedChips();
       // If panel is open, refresh it
       const panel = this.root.querySelector('#api-attach-panel');
       if (panel?.classList.contains('open')) {
-        this.renderApiAttachDocs(this._apiDocs || [], this.root.querySelector('#api-attach-search')?.value || '');
+        const { docs } = await this._getProjectFilteredDocs(this._apiDocs || []);
+        this.renderApiAttachDocs(docs, this.root.querySelector('#api-attach-search')?.value || '');
       }
     }
 
@@ -6015,12 +6116,13 @@
       this.updateClearBtnVisibility();
     }
 
-    filterApiAttachPanel(query) {
+    async filterApiAttachPanel(query) {
       if (!this._apiDocs?.length) return;
       const lowerFilter = query.toLowerCase().trim();
 
-      // Re-render docs list with filter
-      this.renderApiAttachDocs(this._apiDocs, lowerFilter);
+      // Re-render docs list with filter, respecting project pinning
+      const { docs } = await this._getProjectFilteredDocs(this._apiDocs);
+      this.renderApiAttachDocs(docs, lowerFilter);
 
       // Auto-expand docs whose children are already cached and match filter
       if (lowerFilter) {
@@ -6374,8 +6476,11 @@
 
       if (!this._apiDocs?.length) return;
 
+      // Only cache docs relevant to the current project (or all if none pinned)
+      const { docs: relevantDocs } = await this._getProjectFilteredDocs(this._apiDocs);
+
       // Fetch collection data for any doc not yet cached (in parallel)
-      const uncached = this._apiDocs.filter(d => !this._apiAttachCache[d.id]);
+      const uncached = relevantDocs.filter(d => !this._apiAttachCache[d.id]);
       if (!uncached.length) return;
 
       // Flag to avoid re-fetching while in progress
@@ -6428,8 +6533,11 @@
       const lowerQ = query.toLowerCase();
       const results = []; // { type, docId, docName, label, path, method?, url? }
 
-      // Search across all docs
-      for (const doc of (this._apiDocs || [])) {
+      // Filter to project-pinned docs if applicable
+      const { docs: searchDocs } = await this._getProjectFilteredDocs(this._apiDocs || []);
+
+      // Search across relevant docs
+      for (const doc of searchDocs) {
         const docName = doc.name || 'Untitled';
 
         // Match on collection name

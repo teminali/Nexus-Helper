@@ -231,8 +231,50 @@ const ProjectStorage = {
   }
 };
 
+// Project ↔ API Docs pinning (maps project path → array of pinned doc IDs)
+const ProjectApiDocsStorage = {
+  async getProjectApiDocs(projectPath) {
+    if (!projectPath) return [];
+    const result = await chrome.storage.local.get(['projectApiDocs']);
+    const map = result.projectApiDocs || {};
+    return map[projectPath] || [];
+  },
+
+  async setProjectApiDocs(projectPath, docIds) {
+    if (!projectPath) return;
+    const result = await chrome.storage.local.get(['projectApiDocs']);
+    const map = result.projectApiDocs || {};
+    map[projectPath] = docIds;
+    await chrome.storage.local.set({ projectApiDocs: map });
+  },
+
+  async pinApiDocToProject(projectPath, docId) {
+    if (!projectPath || !docId) return;
+    const docs = await this.getProjectApiDocs(projectPath);
+    if (!docs.includes(docId)) {
+      docs.push(docId);
+      await this.setProjectApiDocs(projectPath, docs);
+    }
+    return docs;
+  },
+
+  async unpinApiDocFromProject(projectPath, docId) {
+    if (!projectPath || !docId) return;
+    const docs = await this.getProjectApiDocs(projectPath);
+    const filtered = docs.filter(id => id !== docId);
+    await this.setProjectApiDocs(projectPath, filtered);
+    return filtered;
+  },
+
+  async isApiDocPinned(projectPath, docId) {
+    if (!projectPath || !docId) return false;
+    const docs = await this.getProjectApiDocs(projectPath);
+    return docs.includes(docId);
+  }
+};
+
 // Merge into Storage
-Object.assign(Storage, ProjectStorage);
+Object.assign(Storage, ProjectStorage, ProjectApiDocsStorage);
 
 // Export for use in popup
 if (typeof module !== 'undefined' && module.exports) {
