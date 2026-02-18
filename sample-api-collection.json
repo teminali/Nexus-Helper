@@ -1,0 +1,526 @@
+{
+  "info": {
+    "name": "TaskFlow API",
+    "description": "A sample project management API with authentication, tasks, projects, and team management endpoints.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Authentication",
+      "item": [
+        {
+          "name": "Register User",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"John Doe\",\n  \"email\": \"john@example.com\",\n  \"password\": \"securePass123\",\n  \"role\": \"member\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/register",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "auth", "register"]
+            },
+            "description": "Register a new user account. Returns a JWT access token and refresh token."
+          },
+          "response": [
+            {
+              "name": "Success",
+              "status": "Created",
+              "code": 201,
+              "header": [
+                { "key": "Content-Type", "value": "application/json" }
+              ],
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"user\": {\n      \"id\": \"usr_abc123\",\n      \"name\": \"John Doe\",\n      \"email\": \"john@example.com\",\n      \"role\": \"member\",\n      \"createdAt\": \"2026-01-15T10:30:00Z\"\n    },\n    \"accessToken\": \"eyJhbGciOiJIUzI1NiIs...\",\n    \"refreshToken\": \"dGhpcyBpcyBhIHJlZnJl...\",\n    \"expiresIn\": 3600\n  }\n}"
+            },
+            {
+              "name": "Validation Error",
+              "status": "Bad Request",
+              "code": 400,
+              "header": [
+                { "key": "Content-Type", "value": "application/json" }
+              ],
+              "body": "{\n  \"success\": false,\n  \"error\": {\n    \"code\": \"VALIDATION_ERROR\",\n    \"message\": \"Email already registered\",\n    \"fields\": {\n      \"email\": \"This email is already in use\"\n    }\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Login",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"john@example.com\",\n  \"password\": \"securePass123\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "auth", "login"]
+            },
+            "description": "Authenticate with email and password. Returns JWT tokens."
+          },
+          "response": [
+            {
+              "name": "Success",
+              "status": "OK",
+              "code": 200,
+              "header": [
+                { "key": "Content-Type", "value": "application/json" }
+              ],
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"accessToken\": \"eyJhbGciOiJIUzI1NiIs...\",\n    \"refreshToken\": \"dGhpcyBpcyBhIHJlZnJl...\",\n    \"expiresIn\": 3600,\n    \"user\": {\n      \"id\": \"usr_abc123\",\n      \"name\": \"John Doe\",\n      \"email\": \"john@example.com\",\n      \"role\": \"member\"\n    }\n  }\n}"
+            },
+            {
+              "name": "Invalid Credentials",
+              "status": "Unauthorized",
+              "code": 401,
+              "header": [
+                { "key": "Content-Type", "value": "application/json" }
+              ],
+              "body": "{\n  \"success\": false,\n  \"error\": {\n    \"code\": \"INVALID_CREDENTIALS\",\n    \"message\": \"Email or password is incorrect\"\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Refresh Token",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refreshToken\": \"dGhpcyBpcyBhIHJlZnJl...\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/refresh",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "auth", "refresh"]
+            },
+            "description": "Exchange a valid refresh token for a new access token."
+          },
+          "response": [
+            {
+              "name": "Success",
+              "status": "OK",
+              "code": 200,
+              "header": [
+                { "key": "Content-Type", "value": "application/json" }
+              ],
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"accessToken\": \"eyJhbGciOiJIUzI1NiIs...\",\n    \"expiresIn\": 3600\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Get Current User",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/me",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "auth", "me"]
+            },
+            "description": "Get the currently authenticated user's profile."
+          },
+          "response": [
+            {
+              "name": "Success",
+              "status": "OK",
+              "code": 200,
+              "header": [
+                { "key": "Content-Type", "value": "application/json" }
+              ],
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"id\": \"usr_abc123\",\n    \"name\": \"John Doe\",\n    \"email\": \"john@example.com\",\n    \"role\": \"member\",\n    \"avatar\": \"https://cdn.example.com/avatars/usr_abc123.jpg\",\n    \"createdAt\": \"2026-01-15T10:30:00Z\",\n    \"lastLogin\": \"2026-02-12T08:15:00Z\"\n  }\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Projects",
+      "item": [
+        {
+          "name": "List Projects",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/projects?page=1&limit=20&status=active",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "projects"],
+              "query": [
+                { "key": "page", "value": "1", "description": "Page number" },
+                { "key": "limit", "value": "20", "description": "Items per page" },
+                { "key": "status", "value": "active", "description": "Filter by status: active, archived, all" }
+              ]
+            },
+            "description": "List all projects the authenticated user has access to. Supports pagination and status filtering."
+          },
+          "response": [
+            {
+              "name": "Success",
+              "status": "OK",
+              "code": 200,
+              "header": [
+                { "key": "Content-Type", "value": "application/json" }
+              ],
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"projects\": [\n      {\n        \"id\": \"prj_001\",\n        \"name\": \"Website Redesign\",\n        \"description\": \"Complete overhaul of the company website\",\n        \"status\": \"active\",\n        \"owner\": {\n          \"id\": \"usr_abc123\",\n          \"name\": \"John Doe\"\n        },\n        \"memberCount\": 5,\n        \"taskCount\": 24,\n        \"createdAt\": \"2026-01-10T09:00:00Z\",\n        \"updatedAt\": \"2026-02-11T14:30:00Z\"\n      }\n    ],\n    \"pagination\": {\n      \"page\": 1,\n      \"limit\": 20,\n      \"total\": 3,\n      \"totalPages\": 1\n    }\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Create Project",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Mobile App v2\",\n  \"description\": \"React Native mobile app redesign\",\n  \"color\": \"#4f8cff\",\n  \"templateId\": null\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/projects",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "projects"]
+            },
+            "description": "Create a new project. The authenticated user becomes the project owner."
+          },
+          "response": [
+            {
+              "name": "Success",
+              "status": "Created",
+              "code": 201,
+              "header": [
+                { "key": "Content-Type", "value": "application/json" }
+              ],
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"id\": \"prj_002\",\n    \"name\": \"Mobile App v2\",\n    \"description\": \"React Native mobile app redesign\",\n    \"color\": \"#4f8cff\",\n    \"status\": \"active\",\n    \"owner\": {\n      \"id\": \"usr_abc123\",\n      \"name\": \"John Doe\"\n    },\n    \"memberCount\": 1,\n    \"taskCount\": 0,\n    \"createdAt\": \"2026-02-13T10:00:00Z\",\n    \"updatedAt\": \"2026-02-13T10:00:00Z\"\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Get Project",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/projects/:projectId",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "projects", ":projectId"],
+              "variable": [
+                { "key": "projectId", "value": "prj_001", "description": "The project ID" }
+              ]
+            },
+            "description": "Get detailed information about a specific project including members and recent activity."
+          },
+          "response": [
+            {
+              "name": "Success",
+              "status": "OK",
+              "code": 200,
+              "header": [
+                { "key": "Content-Type", "value": "application/json" }
+              ],
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"id\": \"prj_001\",\n    \"name\": \"Website Redesign\",\n    \"description\": \"Complete overhaul of the company website\",\n    \"color\": \"#4f8cff\",\n    \"status\": \"active\",\n    \"owner\": {\n      \"id\": \"usr_abc123\",\n      \"name\": \"John Doe\",\n      \"email\": \"john@example.com\"\n    },\n    \"members\": [\n      { \"id\": \"usr_abc123\", \"name\": \"John Doe\", \"role\": \"owner\" },\n      { \"id\": \"usr_def456\", \"name\": \"Jane Smith\", \"role\": \"editor\" }\n    ],\n    \"taskCount\": 24,\n    \"completedTaskCount\": 18,\n    \"createdAt\": \"2026-01-10T09:00:00Z\",\n    \"updatedAt\": \"2026-02-11T14:30:00Z\"\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Delete Project",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/projects/:projectId",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "projects", ":projectId"],
+              "variable": [
+                { "key": "projectId", "value": "prj_001", "description": "The project ID" }
+              ]
+            },
+            "description": "Delete a project. Only the project owner can perform this action. All tasks within the project will also be deleted."
+          },
+          "response": [
+            {
+              "name": "Success",
+              "status": "OK",
+              "code": 200,
+              "header": [
+                { "key": "Content-Type", "value": "application/json" }
+              ],
+              "body": "{\n  \"success\": true,\n  \"message\": \"Project deleted successfully\"\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Tasks",
+      "item": [
+        {
+          "name": "List Tasks",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/projects/:projectId/tasks?status=open&priority=high&assignee=usr_abc123&page=1&limit=50",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "projects", ":projectId", "tasks"],
+              "query": [
+                { "key": "status", "value": "open", "description": "Filter: open, in_progress, done, all" },
+                { "key": "priority", "value": "high", "description": "Filter: low, medium, high, urgent" },
+                { "key": "assignee", "value": "usr_abc123", "description": "Filter by assignee user ID" },
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "50" }
+              ],
+              "variable": [
+                { "key": "projectId", "value": "prj_001" }
+              ]
+            },
+            "description": "List tasks in a project with optional filters for status, priority, and assignee."
+          },
+          "response": [
+            {
+              "name": "Success",
+              "status": "OK",
+              "code": 200,
+              "header": [
+                { "key": "Content-Type", "value": "application/json" }
+              ],
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"tasks\": [\n      {\n        \"id\": \"tsk_101\",\n        \"title\": \"Implement user dashboard\",\n        \"description\": \"Create the main dashboard with analytics widgets\",\n        \"status\": \"open\",\n        \"priority\": \"high\",\n        \"assignee\": {\n          \"id\": \"usr_abc123\",\n          \"name\": \"John Doe\"\n        },\n        \"labels\": [\"frontend\", \"feature\"],\n        \"dueDate\": \"2026-02-20T00:00:00Z\",\n        \"createdAt\": \"2026-02-01T09:00:00Z\",\n        \"updatedAt\": \"2026-02-10T16:45:00Z\"\n      }\n    ],\n    \"pagination\": {\n      \"page\": 1,\n      \"limit\": 50,\n      \"total\": 6,\n      \"totalPages\": 1\n    }\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Create Task",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Fix login page responsive layout\",\n  \"description\": \"The login form overflows on mobile screens below 375px width\",\n  \"priority\": \"high\",\n  \"assigneeId\": \"usr_def456\",\n  \"labels\": [\"bug\", \"frontend\", \"mobile\"],\n  \"dueDate\": \"2026-02-18T00:00:00Z\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/projects/:projectId/tasks",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "projects", ":projectId", "tasks"],
+              "variable": [
+                { "key": "projectId", "value": "prj_001" }
+              ]
+            },
+            "description": "Create a new task within a project."
+          },
+          "response": [
+            {
+              "name": "Success",
+              "status": "Created",
+              "code": 201,
+              "header": [
+                { "key": "Content-Type", "value": "application/json" }
+              ],
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"id\": \"tsk_107\",\n    \"title\": \"Fix login page responsive layout\",\n    \"description\": \"The login form overflows on mobile screens below 375px width\",\n    \"status\": \"open\",\n    \"priority\": \"high\",\n    \"assignee\": {\n      \"id\": \"usr_def456\",\n      \"name\": \"Jane Smith\"\n    },\n    \"labels\": [\"bug\", \"frontend\", \"mobile\"],\n    \"dueDate\": \"2026-02-18T00:00:00Z\",\n    \"createdAt\": \"2026-02-13T10:30:00Z\",\n    \"updatedAt\": \"2026-02-13T10:30:00Z\"\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Update Task Status",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"in_progress\",\n  \"assigneeId\": \"usr_abc123\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/projects/:projectId/tasks/:taskId",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "projects", ":projectId", "tasks", ":taskId"],
+              "variable": [
+                { "key": "projectId", "value": "prj_001" },
+                { "key": "taskId", "value": "tsk_101" }
+              ]
+            },
+            "description": "Update a task's status, assignee, priority, labels, or due date."
+          },
+          "response": [
+            {
+              "name": "Success",
+              "status": "OK",
+              "code": 200,
+              "header": [
+                { "key": "Content-Type", "value": "application/json" }
+              ],
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"id\": \"tsk_101\",\n    \"title\": \"Implement user dashboard\",\n    \"status\": \"in_progress\",\n    \"priority\": \"high\",\n    \"assignee\": {\n      \"id\": \"usr_abc123\",\n      \"name\": \"John Doe\"\n    },\n    \"updatedAt\": \"2026-02-13T11:00:00Z\"\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Add Comment",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"body\": \"Started working on the dashboard layout. Using CSS Grid for the widget placement.\",\n  \"mentions\": [\"usr_def456\"]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/projects/:projectId/tasks/:taskId/comments",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "projects", ":projectId", "tasks", ":taskId", "comments"],
+              "variable": [
+                { "key": "projectId", "value": "prj_001" },
+                { "key": "taskId", "value": "tsk_101" }
+              ]
+            },
+            "description": "Add a comment to a task. Supports @mentions which trigger notifications."
+          },
+          "response": [
+            {
+              "name": "Success",
+              "status": "Created",
+              "code": 201,
+              "header": [
+                { "key": "Content-Type", "value": "application/json" }
+              ],
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"id\": \"cmt_301\",\n    \"body\": \"Started working on the dashboard layout. Using CSS Grid for the widget placement.\",\n    \"author\": {\n      \"id\": \"usr_abc123\",\n      \"name\": \"John Doe\"\n    },\n    \"mentions\": [\"usr_def456\"],\n    \"createdAt\": \"2026-02-13T11:15:00Z\"\n  }\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Team",
+      "item": [
+        {
+          "name": "List Team Members",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/projects/:projectId/members",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "projects", ":projectId", "members"],
+              "variable": [
+                { "key": "projectId", "value": "prj_001" }
+              ]
+            },
+            "description": "List all members of a project with their roles and join dates."
+          },
+          "response": [
+            {
+              "name": "Success",
+              "status": "OK",
+              "code": 200,
+              "header": [
+                { "key": "Content-Type", "value": "application/json" }
+              ],
+              "body": "{\n  \"success\": true,\n  \"data\": [\n    {\n      \"id\": \"usr_abc123\",\n      \"name\": \"John Doe\",\n      \"email\": \"john@example.com\",\n      \"role\": \"owner\",\n      \"joinedAt\": \"2026-01-10T09:00:00Z\"\n    },\n    {\n      \"id\": \"usr_def456\",\n      \"name\": \"Jane Smith\",\n      \"email\": \"jane@example.com\",\n      \"role\": \"editor\",\n      \"joinedAt\": \"2026-01-12T14:00:00Z\"\n    },\n    {\n      \"id\": \"usr_ghi789\",\n      \"name\": \"Bob Wilson\",\n      \"email\": \"bob@example.com\",\n      \"role\": \"viewer\",\n      \"joinedAt\": \"2026-01-20T11:30:00Z\"\n    }\n  ]\n}"
+            }
+          ]
+        },
+        {
+          "name": "Invite Member",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"alice@example.com\",\n  \"role\": \"editor\",\n  \"message\": \"Join our website redesign project!\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/projects/:projectId/members/invite",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "projects", ":projectId", "members", "invite"],
+              "variable": [
+                { "key": "projectId", "value": "prj_001" }
+              ]
+            },
+            "description": "Invite a new member to the project by email. An invitation email will be sent."
+          },
+          "response": [
+            {
+              "name": "Success",
+              "status": "OK",
+              "code": 200,
+              "header": [
+                { "key": "Content-Type", "value": "application/json" }
+              ],
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"invitationId\": \"inv_501\",\n    \"email\": \"alice@example.com\",\n    \"role\": \"editor\",\n    \"status\": \"pending\",\n    \"expiresAt\": \"2026-02-20T10:00:00Z\"\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Remove Member",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/projects/:projectId/members/:memberId",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "projects", ":projectId", "members", ":memberId"],
+              "variable": [
+                { "key": "projectId", "value": "prj_001" },
+                { "key": "memberId", "value": "usr_ghi789" }
+              ]
+            },
+            "description": "Remove a member from the project. Only the project owner or admins can do this."
+          },
+          "response": [
+            {
+              "name": "Success",
+              "status": "OK",
+              "code": 200,
+              "header": [
+                { "key": "Content-Type", "value": "application/json" }
+              ],
+              "body": "{\n  \"success\": true,\n  \"message\": \"Member removed successfully\"\n}"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "https://api.taskflow.example.com"
+    },
+    {
+      "key": "accessToken",
+      "value": "your-jwt-token-here"
+    }
+  ]
+}

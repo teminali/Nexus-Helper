@@ -2,7 +2,7 @@
 
 > AI-powered context capture for Cursor, Antigravity, VS Code, Windsurf & Zed. Routes, screenshots, debug info, smart prompts, API docs integration, and rich contextual awareness -- all from a floating widget in your browser.
 
-![Version](https://img.shields.io/badge/version-3.3.0-blueviolet)
+![Version](https://img.shields.io/badge/version-3.4.0-blueviolet)
 ![Chrome Extension](https://img.shields.io/badge/platform-Chrome%20Extension-green)
 ![Manifest](https://img.shields.io/badge/manifest-v3-blue)
 
@@ -121,15 +121,8 @@ Real-time estimated token count of the generated context, with visual warnings:
 
 ## Installation
 
-1. Clone this repository:
-   ```bash
-   git clone https://github.com/YOUR_USERNAME/Nexus-Helper.git
-   ```
-2. Open Chrome and navigate to `chrome://extensions/`
-3. Enable **Developer mode** (toggle in top right)
-4. Click **Load unpacked**
-5. Select the `Nexus-Helper` folder
-6. The widget appears automatically on any web page
+1. **[Add to Chrome/Edge](https://chromewebstore.google.com/detail/cibepecnmpbapbnmimajjmfbagllelkn?utm_source=item-share-cb)** from the Chrome Web Store.
+2. That's it! The widget will appear automatically on any web page.
 
 ---
 
@@ -239,6 +232,12 @@ Nexus-Helper/
 ---
 
 ## Changelog
+
+### v3.4.0 -- Chrome Web Store Release
+- **Official Release**: Now available on the Chrome Web Store!
+- **Simplified Installation**: No more manual loading or developer mode required.
+- **Auto-Updates**: Get the latest features and bug fixes automatically.
+- **Bug Fixes**: Improved stability and performance.
 
 ### v3.3.0 -- API Docs Integration & Minimized Redesign
 - Firebase Auth integration (email/password + Google Sign-in)

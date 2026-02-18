@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
+  <defs>
+    <linearGradient id="nw-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#0ea5e9"/>
+      <stop offset="50%" style="stop-color:#6366f1"/>
+      <stop offset="100%" style="stop-color:#8b5cf6"/>
+    </linearGradient>
+    <linearGradient id="nw-needle" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#f59e0b"/>
+      <stop offset="100%" style="stop-color:#ef4444"/>
+    </linearGradient>
+  </defs>
+  <!-- Background circle -->
+  <circle cx="64" cy="64" r="62" fill="#0f172a" stroke="url(#nw-grad)" stroke-width="3"/>
+  <!-- Compass ring -->
+  <circle cx="64" cy="64" r="52" fill="none" stroke="url(#nw-grad)" stroke-width="1.5" opacity="0.4"/>
+  <!-- Cardinal tick marks -->
+  <line x1="64" y1="8" x2="64" y2="18" stroke="url(#nw-grad)" stroke-width="2.5" stroke-linecap="round"/>
+  <line x1="64" y1="110" x2="64" y2="120" stroke="url(#nw-grad)" stroke-width="2.5" stroke-linecap="round"/>
+  <line x1="8" y1="64" x2="18" y2="64" stroke="url(#nw-grad)" stroke-width="2.5" stroke-linecap="round"/>
+  <line x1="110" y1="64" x2="120" y2="64" stroke="url(#nw-grad)" stroke-width="2.5" stroke-linecap="round"/>
+  <!-- Diagonal tick marks -->
+  <line x1="24" y1="24" x2="30" y2="30" stroke="url(#nw-grad)" stroke-width="1.5" stroke-linecap="round" opacity="0.5"/>
+  <line x1="98" y1="98" x2="104" y2="104" stroke="url(#nw-grad)" stroke-width="1.5" stroke-linecap="round" opacity="0.5"/>
+  <line x1="104" y1="24" x2="98" y2="30" stroke="url(#nw-grad)" stroke-width="1.5" stroke-linecap="round" opacity="0.5"/>
+  <line x1="24" y1="104" x2="30" y2="98" stroke="url(#nw-grad)" stroke-width="1.5" stroke-linecap="round" opacity="0.5"/>
+  <!-- Compass needle - North (gold/red) -->
+  <polygon points="64,20 58,64 70,64" fill="url(#nw-needle)" opacity="0.9"/>
+  <!-- Compass needle - South -->
+  <polygon points="64,108 58,64 70,64" fill="url(#nw-grad)" opacity="0.6"/>
+  <!-- Center dot -->
+  <circle cx="64" cy="64" r="5" fill="url(#nw-grad)"/>
+  <circle cx="64" cy="64" r="2.5" fill="#f59e0b"/>
+  <!-- "W" letter subtly in bottom half -->
+  <text x="64" y="98" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-weight="800" font-size="18" fill="url(#nw-grad)" opacity="0.7">W</text>
+</svg>

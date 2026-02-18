@@ -37,6 +37,120 @@ async function clearTabErrors(tabId) {
   } catch (e) { /* ignore */ }
 }
 
+// ---------------------------------------------------------------------------
+// URL Bar Overlay — composites a synthetic browser address bar onto screenshots
+// since captureVisibleTab cannot capture browser chrome.
+// ---------------------------------------------------------------------------
+
+async function compositeUrlBar(screenshotDataUrl, pageUrl) {
+  try {
+    // Decode screenshot into an ImageBitmap
+    const res = await fetch(screenshotDataUrl);
+    const blob = await res.blob();
+    const img = await createImageBitmap(blob);
+
+    const BAR_HEIGHT = 48;
+    const PAD_X = 16;
+    const PAD_Y = 10;
+    const PILL_RADIUS = 12;
+    const canvasW = img.width;
+    const canvasH = img.height + BAR_HEIGHT;
+
+    const canvas = new OffscreenCanvas(canvasW, canvasH);
+    const ctx = canvas.getContext('2d');
+
+    // ── Draw URL bar background ──
+    ctx.fillStyle = '#f1f3f4';
+    ctx.fillRect(0, 0, canvasW, BAR_HEIGHT);
+
+    // Bottom border
+    ctx.fillStyle = '#dadce0';
+    ctx.fillRect(0, BAR_HEIGHT - 1, canvasW, 1);
+
+    // ── Draw address pill (rounded rect) ──
+    const pillX = PAD_X;
+    const pillY = PAD_Y;
+    const pillW = canvasW - PAD_X * 2;
+    const pillH = BAR_HEIGHT - PAD_Y * 2;
+
+    ctx.fillStyle = '#ffffff';
+    ctx.beginPath();
+    ctx.roundRect(pillX, pillY, pillW, pillH, PILL_RADIUS);
+    ctx.fill();
+
+    // Pill border
+    ctx.strokeStyle = '#dadce0';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.roundRect(pillX, pillY, pillW, pillH, PILL_RADIUS);
+    ctx.stroke();
+
+    // ── Lock / warning icon ──
+    const isSecure = pageUrl.startsWith('https://');
+    const iconX = pillX + 14;
+    const iconCenterY = BAR_HEIGHT / 2;
+    const iconSize = 14;
+
+    ctx.font = `${iconSize}px system-ui, sans-serif`;
+    ctx.textBaseline = 'middle';
+
+    if (isSecure) {
+      // Draw a simple lock shape
+      ctx.fillStyle = '#5f6368';
+      // Lock body
+      const lx = iconX, ly = iconCenterY - 2;
+      ctx.fillRect(lx, ly, 10, 8);
+      // Lock shackle (arc)
+      ctx.strokeStyle = '#5f6368';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(lx + 5, ly, 5, Math.PI, 0);
+      ctx.stroke();
+    } else {
+      // Warning triangle
+      ctx.fillStyle = '#ea4335';
+      ctx.font = `bold ${iconSize + 2}px system-ui, sans-serif`;
+      ctx.fillText('⚠', iconX, iconCenterY);
+    }
+
+    // ── Draw URL text ──
+    const textX = iconX + 22;
+    const maxTextW = pillW - (textX - pillX) - 14;
+    ctx.fillStyle = '#202124';
+    ctx.font = '14px system-ui, -apple-system, sans-serif';
+    ctx.textBaseline = 'middle';
+
+    // Truncate URL if needed
+    let displayUrl = pageUrl;
+    let measured = ctx.measureText(displayUrl);
+    if (measured.width > maxTextW) {
+      while (displayUrl.length > 10 && ctx.measureText(displayUrl + '…').width > maxTextW) {
+        displayUrl = displayUrl.slice(0, -1);
+      }
+      displayUrl += '…';
+    }
+    ctx.fillText(displayUrl, textX, BAR_HEIGHT / 2);
+
+    // ── Draw the page screenshot below ──
+    ctx.drawImage(img, 0, BAR_HEIGHT);
+
+    // Export as PNG data URL (service-worker compatible — no FileReader)
+    const outputBlob = await canvas.convertToBlob({ type: 'image/png' });
+    const ab = await outputBlob.arrayBuffer();
+    const bytes = new Uint8Array(ab);
+    // Chunked btoa to avoid call-stack overflow on large screenshots
+    let binary = '';
+    const chunkSize = 8192;
+    for (let i = 0; i < bytes.length; i += chunkSize) {
+      binary += String.fromCharCode.apply(null, bytes.subarray(i, i + chunkSize));
+    }
+    return 'data:image/png;base64,' + btoa(binary);
+  } catch (err) {
+    console.warn('Nexus Helper: URL bar compositing failed, using raw screenshot:', err);
+    return screenshotDataUrl; // fallback to raw screenshot
+  }
+}
+
 // Screenshot capture
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.action === 'copyScreenshot') {
@@ -48,7 +162,8 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
           return;
         }
 
-        const dataUrl = await chrome.tabs.captureVisibleTab(null, { format: 'png' });
+        const rawDataUrl = await chrome.tabs.captureVisibleTab(null, { format: 'png' });
+        const dataUrl = await compositeUrlBar(rawDataUrl, tab.url || '');
 
         // Store in clipboard history
         await Storage.addToClipboardHistory({
@@ -76,7 +191,8 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
           return;
         }
 
-        const dataUrl = await chrome.tabs.captureVisibleTab(null, { format: 'png' });
+        const rawDataUrl = await chrome.tabs.captureVisibleTab(null, { format: 'png' });
+        const dataUrl = await compositeUrlBar(rawDataUrl, tab.url || '');
         sendResponse({ ok: true, dataUrl, url: tab.url });
       } catch (err) {
         sendResponse({ ok: false, error: String(err.message || err) });
@@ -204,7 +320,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       chrome.tabs.sendMessage(sender.tab.id, {
         action: 'networkDataUpdated',
         count: message.count
-      }).catch(() => {});
+      }).catch(() => { });
     }
     return false;
   }
@@ -263,11 +379,11 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         // Build URL scheme based on editor
         const encodedPath = projectPath ? encodeURIComponent(projectPath) : '';
         const schemes = {
-          cursor:       encodedPath ? `cursor://file/${encodedPath}` : 'cursor://',
-          vscode:       encodedPath ? `vscode://file/${encodedPath}` : 'vscode://',
-          antigravity:  encodedPath ? `antigravity://open?path=${encodedPath}` : 'antigravity://',
-          windsurf:     encodedPath ? `windsurf://file/${encodedPath}` : 'windsurf://',
-          zed:          encodedPath ? `zed://file/${encodedPath}` : 'zed://'
+          cursor: encodedPath ? `cursor://file/${encodedPath}` : 'cursor://',
+          vscode: encodedPath ? `vscode://file/${encodedPath}` : 'vscode://',
+          antigravity: encodedPath ? `antigravity://open?path=${encodedPath}` : 'antigravity://',
+          windsurf: encodedPath ? `windsurf://file/${encodedPath}` : 'windsurf://',
+          zed: encodedPath ? `zed://file/${encodedPath}` : 'zed://'
         };
         const schemeUrl = schemes[editor] || null;
 
@@ -546,7 +662,7 @@ async function nexusAuthRefresh(refreshToken) {
     const info = await nexusAuthLookup(data.id_token);
     authData.email = info.email || '';
     authData.displayName = info.displayName || '';
-  } catch (_) {}
+  } catch (_) { }
 
   await storeAuthTokens(authData);
   return { uid: authData.localId, email: authData.email, displayName: authData.displayName };

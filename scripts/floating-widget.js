@@ -89,7 +89,7 @@
         const url = String(r?.url || '');
         const timestamp = Number(r?.timestamp || Date.now());
         let path = url;
-        try { path = new URL(url, window.location.origin).pathname; } catch (_) {}
+        try { path = new URL(url, window.location.origin).pathname; } catch (_) { }
         return {
           id: `${timestamp}:${method}:${url}`,
           type: r?.type || 'network',
@@ -3242,8 +3242,8 @@
             let t = startT;
 
             // Horizontal
-            if (dir.includes('right'))  w = startW + dx;
-            if (dir.includes('left'))   { w = startW - dx; l = startL + dx; }
+            if (dir.includes('right')) w = startW + dx;
+            if (dir.includes('left')) { w = startW - dx; l = startL + dx; }
             // Vertical
             if (dir.includes('bottom')) h = startH + dy;
             if (dir === 'top' || dir === 'top-left' || dir === 'top-right') { h = startH - dy; t = startT + dy; }
@@ -3253,7 +3253,7 @@
             h = Math.max(MIN_H, Math.min(MAX_H, h));
 
             // Recalculate position if we clamped and were dragging from left/top
-            if (dir.includes('left'))  l = startL + startW - w;
+            if (dir.includes('left')) l = startL + startW - w;
             if (dir === 'top' || dir === 'top-left' || dir === 'top-right') t = startT + startH - h;
 
             // Keep within viewport
@@ -3606,7 +3606,7 @@
         if (failed.length) {
           const netLines = failed.map(r => {
             let path = r.path || r.url || 'unknown';
-            try { path = new URL(r.url, window.location.origin).pathname; } catch (_) {}
+            try { path = new URL(r.url, window.location.origin).pathname; } catch (_) { }
             const method = String(r.method || 'GET').toUpperCase();
             const status = r.error ? `ERR` : String(r.status);
             const dur = r.duration ? ` ${r.duration}ms` : '';
@@ -4104,7 +4104,7 @@
 
       return failed.map((r, i) => {
         let path = r.path || r.url || 'unknown';
-        try { path = new URL(r.url, window.location.origin).pathname; } catch (_) {}
+        try { path = new URL(r.url, window.location.origin).pathname; } catch (_) { }
         const status = r.error ? `ERR (${r.error})` : String(r.status || 'ERR');
         const statusText = r.statusText ? ` ${r.statusText}` : '';
         const method = String(r.method || 'GET').toUpperCase();
@@ -4264,7 +4264,7 @@
           const url = String(r?.url || '');
           // Only include API-like endpoints, skip static assets
           return /\/(api|graphql|v\d|rest)\b/i.test(url) || /\.(json)$/i.test(url) ||
-                 (r?.responseBody && !/(\.js|\.css|\.html|\.png|\.jpg|\.svg|\.woff)/i.test(url));
+            (r?.responseBody && !/(\.js|\.css|\.html|\.png|\.jpg|\.svg|\.woff)/i.test(url));
         })
         .slice(0, 5);
 
@@ -4272,7 +4272,7 @@
 
       const lines = successful.map(r => {
         let path = r.path || r.url || 'unknown';
-        try { path = new URL(r.url, window.location.origin).pathname; } catch (_) {}
+        try { path = new URL(r.url, window.location.origin).pathname; } catch (_) { }
         const method = String(r.method || 'GET').toUpperCase();
         const status = String(r.status);
 
@@ -4370,24 +4370,56 @@
 
     /**
      * T4: React Component Tree — detect rendered component hierarchy from fiber/devtools
+     * Supports: Next.js Pages Router (#__next), CRA/Vite (#root), Next.js App Router (body), Vue (#app)
      */
     buildComponentTree() {
       try {
-        // Find React root
-        const rootEl = document.getElementById('__next') || document.getElementById('root') || document.getElementById('app');
-        if (!rootEl) return '';
+        // ── Step 1: Find a DOM element that has a React fiber key ──
+        let fiberKey = null;
+        let fiber = null;
 
-        // Access React fiber
-        const fiberKey = Object.keys(rootEl).find(k => k.startsWith('__reactFiber$') || k.startsWith('__reactInternalInstance$'));
-        if (!fiberKey) return '';
+        // Try well-known root IDs first, then body
+        const candidates = [
+          document.getElementById('__next'),
+          document.getElementById('root'),
+          document.getElementById('app'),
+          document.body
+        ].filter(Boolean);
 
-        const fiber = rootEl[fiberKey];
+        for (const el of candidates) {
+          fiberKey = Object.keys(el).find(k => k.startsWith('__reactFiber$') || k.startsWith('__reactInternalInstance$'));
+          if (fiberKey) {
+            fiber = el[fiberKey];
+            break;
+          }
+        }
+
+        // If none of the root candidates had a fiber, scan child elements (Next.js App Router
+        // attaches fibers to inner elements, not body itself)
+        if (!fiber) {
+          const scanEls = document.querySelectorAll('body > *, body > * > *, main, [data-reactroot]');
+          for (const el of Array.from(scanEls).slice(0, 50)) {
+            fiberKey = Object.keys(el).find(k => k.startsWith('__reactFiber$') || k.startsWith('__reactInternalInstance$'));
+            if (fiberKey) {
+              fiber = el[fiberKey];
+              break;
+            }
+          }
+        }
+
         if (!fiber) return '';
 
-        // Walk the fiber tree and collect component names (skip HTML elements)
+        // ── Step 2: Walk up to the fiber root for the most complete tree ──
+        let root = fiber;
+        let safety = 200;
+        while (root.return && --safety > 0) {
+          root = root.return;
+        }
+
+        // ── Step 3: Walk the fiber tree and collect component names ──
         const components = [];
         const seen = new Set();
-        const MAX = 25;
+        const MAX = 40;
 
         const walk = (node, depth = 0) => {
           if (!node || components.length >= MAX) return;
@@ -4415,7 +4447,7 @@
           if (node.sibling) walk(node.sibling, depth);
         };
 
-        walk(fiber);
+        walk(root);
         return components.length ? components.join('\n') : '';
       } catch (e) {
         return '';
@@ -4436,7 +4468,7 @@
         if (nd.runtimeConfig) info.push(`Runtime config: ${Object.keys(nd.runtimeConfig).join(', ')}`);
         // App Router vs Pages Router
         const isAppRouter = !!document.getElementById('__next')?.querySelector('[data-nextjs-scroll-focus-boundary]') ||
-                            !!document.querySelector('script[src*="app-pages-internals"]');
+          !!document.querySelector('script[src*="app-pages-internals"]');
         info.push(`Router: ${isAppRouter ? 'App Router' : 'Pages Router'}`);
         if (nd.page) info.push(`Page pattern: ${nd.page}`);
         if (nd.query && Object.keys(nd.query).length) {
@@ -4469,12 +4501,12 @@
 
       // TypeScript — check if source maps reference .tsx/.ts
       const tsEvidence = document.querySelector('script[src*=".tsx"], script[src*=".ts"]') ||
-                          window.__NEXT_DATA__?.page?.endsWith('.tsx');
+        window.__NEXT_DATA__?.page?.endsWith('.tsx');
       if (tsEvidence) info.push('Language: TypeScript');
 
       // Environment hints
       const isDev = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' ||
-                    window.location.port !== '' || document.querySelector('[data-nextjs-toast]');
+        window.location.port !== '' || document.querySelector('[data-nextjs-toast]');
       info.push(`Environment: ${isDev ? 'development' : 'production'}`);
 
       // Viewport
@@ -4595,7 +4627,7 @@
         pending.slice(0, 3).forEach(r => {
           const method = String(r?.method || 'GET').toUpperCase();
           let path = r.url || 'unknown';
-          try { path = new URL(r.url, window.location.origin).pathname; } catch (_) {}
+          try { path = new URL(r.url, window.location.origin).pathname; } catch (_) { }
           lines.push(`  ${method} ${path} — waiting...`);
         });
       }
@@ -4605,7 +4637,7 @@
         ok.slice(0, 5).forEach(r => {
           const method = String(r?.method || 'GET').toUpperCase();
           let path = r.url || 'unknown';
-          try { path = new URL(r.url, window.location.origin).pathname; } catch (_) {}
+          try { path = new URL(r.url, window.location.origin).pathname; } catch (_) { }
           const dur = r.duration ? ` ${r.duration}ms` : '';
           lines.push(`  ${method} ${path} → ${r.status}${dur}`);
         });
@@ -4616,7 +4648,7 @@
         failed.slice(0, 3).forEach(r => {
           const method = String(r?.method || 'GET').toUpperCase();
           let path = r.url || 'unknown';
-          try { path = new URL(r.url, window.location.origin).pathname; } catch (_) {}
+          try { path = new URL(r.url, window.location.origin).pathname; } catch (_) { }
           const status = r.error ? `ERR (${r.error})` : String(r.status);
           lines.push(`  ${method} ${path} → ${status}`);
         });
@@ -4871,7 +4903,7 @@
           // Transfer size
           if (nav.transferSize) lines.push(`Page size: ${(nav.transferSize / 1024).toFixed(1)}KB`);
         }
-      } catch (_) {}
+      } catch (_) { }
 
       // LCP via PerformanceObserver buffered entries
       try {
@@ -4880,7 +4912,7 @@
           const lcp = lcpEntries[lcpEntries.length - 1];
           lines.push(`LCP: ${Math.round(lcp.startTime)}ms (${lcp.element?.tagName || 'unknown'})`);
         }
-      } catch (_) {}
+      } catch (_) { }
 
       // Resource summary
       try {
@@ -4902,7 +4934,7 @@
           lines.push(`Resources: ${resources.length} total (${summary})`);
           if (totalSize > 0) lines.push(`Total transfer: ${(totalSize / 1024).toFixed(0)}KB`);
         }
-      } catch (_) {}
+      } catch (_) { }
 
       // Slow network requests (> 1s)
       const entries = Array.isArray(networkEntries) ? networkEntries : [];
@@ -4911,7 +4943,7 @@
         lines.push('Slow requests (>1s):');
         slow.forEach(r => {
           let path = r.url || 'unknown';
-          try { path = new URL(r.url, window.location.origin).pathname; } catch (_) {}
+          try { path = new URL(r.url, window.location.origin).pathname; } catch (_) { }
           lines.push(`  ${path} → ${r.duration}ms`);
         });
       }
@@ -4928,7 +4960,7 @@
           const total = (performance.memory.totalJSHeapSize / (1024 * 1024)).toFixed(1);
           lines.push(`Memory: ${used}MB / ${total}MB`);
         }
-      } catch (_) {}
+      } catch (_) { }
 
       return lines.length ? lines.map(l => `  ${l}`).join('\n') : '';
     }
@@ -5165,16 +5197,16 @@
 
         // Role detection from filename
         const rolePatterns = [
-          { role: 'page',      pattern: /(^|\/)page\.(tsx|jsx|ts|js)$/i },
-          { role: 'page',      pattern: /(^|\/)index\.(tsx|jsx|ts|js)$/i },
-          { role: 'layout',    pattern: /(^|\/)layout\.(tsx|jsx|ts|js)$/i },
-          { role: 'loading',   pattern: /(^|\/)loading\.(tsx|jsx|ts|js)$/i },
-          { role: 'error',     pattern: /(^|\/)error\.(tsx|jsx|ts|js)$/i },
+          { role: 'page', pattern: /(^|\/)page\.(tsx|jsx|ts|js)$/i },
+          { role: 'page', pattern: /(^|\/)index\.(tsx|jsx|ts|js)$/i },
+          { role: 'layout', pattern: /(^|\/)layout\.(tsx|jsx|ts|js)$/i },
+          { role: 'loading', pattern: /(^|\/)loading\.(tsx|jsx|ts|js)$/i },
+          { role: 'error', pattern: /(^|\/)error\.(tsx|jsx|ts|js)$/i },
           { role: 'not-found', pattern: /(^|\/)not-found\.(tsx|jsx|ts|js)$/i },
-          { role: 'template',  pattern: /(^|\/)template\.(tsx|jsx|ts|js)$/i },
-          { role: 'api',       pattern: /(^|\/)route\.(tsx|jsx|ts|js)$/i },
-          { role: 'style',     pattern: /\.(css|scss|module\.css|module\.scss)$/i },
-          { role: 'test',      pattern: /\.(test|spec)\.(tsx|jsx|ts|js)$/i },
+          { role: 'template', pattern: /(^|\/)template\.(tsx|jsx|ts|js)$/i },
+          { role: 'api', pattern: /(^|\/)route\.(tsx|jsx|ts|js)$/i },
+          { role: 'style', pattern: /\.(css|scss|module\.css|module\.scss)$/i },
+          { role: 'test', pattern: /\.(test|spec)\.(tsx|jsx|ts|js)$/i },
         ];
 
         const detectRole = (filePath) => {
@@ -6799,6 +6831,23 @@
 
       if (this.isPicking) {
         btn.classList.add('active');
+
+        // Save cursor position in textarea before minimizing
+        const prompt = this.root.querySelector('#ai-prompt');
+        if (prompt) {
+          this._pickerCursorPos = prompt.selectionStart ?? prompt.value.length;
+        } else {
+          this._pickerCursorPos = 0;
+        }
+
+        // Remember widget state before minimizing so we can restore it
+        this._prePickerState = this.state !== 'collapsed' ? this.state : (this.lastExpandedState || 'expanded');
+
+        // Auto-minimize so user can see the page
+        if (this.state !== 'collapsed') {
+          this.setState('collapsed');
+        }
+
         this.enablePicker();
         this.showToast('Picker ON — click any element');
       } else {
@@ -6817,8 +6866,29 @@
         const text = e.target.innerText || '';
         if (text.trim()) {
           const prompt = this.root.querySelector('#ai-prompt');
-          prompt.value += (prompt.value ? '\n' : '') + text.trim();
-          this.showToast('Text appended');
+          const cursorPos = this._pickerCursorPos ?? prompt.value.length;
+          const before = prompt.value.slice(0, cursorPos);
+          const after = prompt.value.slice(cursorPos);
+          const pickedText = text.trim();
+
+          // Insert at the saved cursor position
+          prompt.value = before + pickedText + after;
+
+          // Auto-restore widget (maximize back)
+          const restoreState = this._prePickerState || this.lastExpandedState || 'expanded';
+          if (this.state === 'collapsed') {
+            this.setState(restoreState);
+          }
+
+          // Auto-focus textarea and place cursor right after the inserted text
+          const newCursorPos = cursorPos + pickedText.length;
+          requestAnimationFrame(() => {
+            prompt.focus();
+            prompt.setSelectionRange(newCursorPos, newCursorPos);
+            prompt.dispatchEvent(new Event('input', { bubbles: true }));
+          });
+
+          this.showToast('Text inserted');
         }
 
         this.togglePicker(); // Auto-off after pick
@@ -6842,6 +6912,21 @@
       }
       document.removeEventListener('click', this.pickerHandler, true);
       document.removeEventListener('mouseover', this.hoverHandler, true);
+
+      // Restore widget if it was minimized by the picker and user cancelled
+      if (this.state === 'collapsed' && this._prePickerState) {
+        this.setState(this._prePickerState);
+        const prompt = this.root.querySelector('#ai-prompt');
+        if (prompt) {
+          requestAnimationFrame(() => {
+            prompt.focus();
+            const pos = this._pickerCursorPos ?? prompt.value.length;
+            prompt.setSelectionRange(pos, pos);
+          });
+        }
+      }
+      this._prePickerState = null;
+      this._pickerCursorPos = null;
     }
 
     async saveState() {
@@ -7671,20 +7756,20 @@
 
         const fileSuggestions = currentProject?.path
           ? routes.slice(0, 12).map(r => {
-              const cleanRoute = (r.route || '/').replace(/[?#].*$/, '');
-              const normalized = cleanRoute === '/' ? 'page' : cleanRoute.replace(/^\/+/, '');
-              const fileRelative = /\.[a-z0-9]+$/i.test(normalized) ? normalized : `${normalized}.tsx`;
-              const shortPath = `${projectAlias}/${fileRelative}`;
-              const fullPath = `${currentProject.path.replace(/\/$/, '')}/${fileRelative}`;
-              return {
-                type: 'file',
-                tag: 'file',
-                title: shortPath,
-                sub: `${shortPath}  •  ${fullPath}`,
-                insertText: `[File: ${shortPath}] `,
-                isCurrentProject: true
-              };
-            })
+            const cleanRoute = (r.route || '/').replace(/[?#].*$/, '');
+            const normalized = cleanRoute === '/' ? 'page' : cleanRoute.replace(/^\/+/, '');
+            const fileRelative = /\.[a-z0-9]+$/i.test(normalized) ? normalized : `${normalized}.tsx`;
+            const shortPath = `${projectAlias}/${fileRelative}`;
+            const fullPath = `${currentProject.path.replace(/\/$/, '')}/${fileRelative}`;
+            return {
+              type: 'file',
+              tag: 'file',
+              title: shortPath,
+              sub: `${shortPath}  •  ${fullPath}`,
+              insertText: `[File: ${shortPath}] `,
+              isCurrentProject: true
+            };
+          })
           : [];
 
         const specialSuggestions = [];
@@ -7877,12 +7962,12 @@
       const filtered = !filterText
         ? items
         : items.filter(r => {
-            const method = String(r.method || '').toLowerCase();
-            const status = String(r.status || '').toLowerCase();
-            const url = String(r.url || '').toLowerCase();
-            const path = String(r.path || '').toLowerCase();
-            return method.includes(filterText) || status.includes(filterText) || url.includes(filterText) || path.includes(filterText);
-          });
+          const method = String(r.method || '').toLowerCase();
+          const status = String(r.status || '').toLowerCase();
+          const url = String(r.url || '').toLowerCase();
+          const path = String(r.path || '').toLowerCase();
+          return method.includes(filterText) || status.includes(filterText) || url.includes(filterText) || path.includes(filterText);
+        });
 
       // Update count badge
       const badge = this.root.querySelector('#network-count-badge');
@@ -7912,7 +7997,7 @@
         const statusClass = isError ? 'err' : 'ok';
         const errorBorder = isError ? ' error' : '';
         let path = r.path || r.url || '';
-        try { path = new URL(r.url, window.location.origin).pathname; } catch (_) {}
+        try { path = new URL(r.url, window.location.origin).pathname; } catch (_) { }
         const methodLower = String(r.method || 'get').toLowerCase();
         const duration = r.duration ? `${r.duration}ms` : '';
         const statusLabel = r.error ? 'ERR' : (r.status || '—');
